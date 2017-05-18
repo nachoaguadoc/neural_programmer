@@ -27,7 +27,7 @@ import wiki_data
 import parameters
 import data_utils
 
-tf.flags.DEFINE_integer("train_steps", 100001, "Number of steps to train")
+tf.flags.DEFINE_integer("train_steps", 25001, "Number of steps to train")
 tf.flags.DEFINE_integer("eval_cycle", 500,
                         "Evaluate model at every eval_cycle steps")
 tf.flags.DEFINE_integer("max_elements", 100,
@@ -40,7 +40,7 @@ tf.flags.DEFINE_integer(
     "maximum number columns that are considered for processing")
 tf.flags.DEFINE_integer("question_length", 62, "maximum question length")
 tf.flags.DEFINE_integer("max_entry_length", 1, "")
-tf.flags.DEFINE_integer("max_passes", 4, "number of operation passes")
+tf.flags.DEFINE_integer("max_passes", 2, "number of operation passes")
 tf.flags.DEFINE_integer("embedding_dims", 256, "")
 tf.flags.DEFINE_integer("batch_size", 20, "")
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
@@ -51,9 +51,9 @@ tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0,
                       "weighting factor in the objective function")
 tf.flags.DEFINE_string("job_id", "temp", """job id""")
-tf.flags.DEFINE_string("output_dir", "../model/",
+tf.flags.DEFINE_string("output_dir", "model/twosteps/",
                        """output_dir""")
-tf.flags.DEFINE_string("data_dir", "../data/",
+tf.flags.DEFINE_string("data_dir", "data/",
                        """data_dir""")
 tf.flags.DEFINE_integer("write_every", 500, "wrtie every N")
 tf.flags.DEFINE_integer("param_seed", 150, "")
@@ -113,10 +113,25 @@ def evaluate(sess, data, batch_size, graph, i):
                                                             graph))
     gc += ct * batch_size
     num_examples += batch_size
-  print "dev set accuracy   after ", i, " : ", gc / num_examples
-  print num_examples, len(data)
-  print "--------"
+  print("dev set accuracy   after ", i, " : ", gc / num_examples)
+  print(num_examples, len(data))
+  print("--------")
 
+def evaluate_single(sess, data, batch_size, graph, i):
+  #computes accuracy
+  print("11111111")
+  print(data)
+  print("22222222")
+  for j in range(0, len(data) - batch_size + 1, batch_size):
+    output, select = sess.run([graph.final_error, graph.final_correct],
+                  feed_dict=data_utils.generate_feed_dict(data, j, batch_size,
+                                                              graph))
+    print(output)
+    print(select)
+    print("**********")
+  print("dev set accuracy   after ", i, " : ", gc / num_examples)
+  print(num_examples, len(data))
+  print("--------")
 
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
@@ -142,16 +157,16 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
     if (i > 0 and i % FLAGS.eval_cycle == 0):
       end = time.time()
       time_taken = end - start
-      print "step ", i, " ", time_taken, " seconds "
+      print("step ", i, " ", time_taken, " seconds ")
       start = end
-      print " printing train set loss: ", train_set_loss / utility.FLAGS.eval_cycle
+      print(" printing train set loss: ", train_set_loss / utility.FLAGS.eval_cycle)
       train_set_loss = 0.0
 
 
 def master(train_data, dev_data, utility):
   #creates TF graph and calls trainer or evaluator
   batch_size = utility.FLAGS.batch_size 
-  model_dir = utility.FLAGS.output_dir + "/model" + utility.FLAGS.job_id + "/"
+  model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
   #create all paramters of the model
   param_class = parameters.Parameters(utility)
   params, global_step, init = param_class.parameters(utility)
@@ -183,26 +198,27 @@ def master(train_data, dev_data, utility):
         file_list = sorted(selected_models.items(), key=lambda x: x[0])
         if (len(file_list) > 0):
           file_list = file_list[0:len(file_list) - 1]
-	print "list of models: ", file_list
+        print("list of models: ", file_list)
         for model_file in file_list:
           model_file = model_file[1]
-          print "restoring: ", model_file
+          print("restoring: ", model_file)
           saver.restore(sess, model_dir + "/" + model_file)
           model_step = int(
               model_file.split("_")[len(model_file.split("_")) - 1])
-          print "evaluating on dev ", model_file, model_step
-          evaluate(sess, dev_data, batch_size, graph, model_step)
+          print("evaluating on dev ", model_file, model_step)
+          evaluate_single(sess, dev_data, batch_size, graph, model_step)
     else:
       ckpt = tf.train.get_checkpoint_state(model_dir)
-      print "model dir: ", model_dir
+      print("model dir: ", model_dir)
       if (not (tf.gfile.IsDirectory(utility.FLAGS.output_dir))):
-        print "create dir: ", utility.FLAGS.output_dir
+        print("create dir: ", utility.FLAGS.output_dir)
         tf.gfile.MkDir(utility.FLAGS.output_dir)
       if (not (tf.gfile.IsDirectory(model_dir))):
-        print "create dir: ", model_dir
+        print("create dir: ", model_dir)
         tf.gfile.MkDir(model_dir)
       Train(graph, utility, batch_size, train_data, sess, model_dir,
             saver)
+
 
 def main(args):
   utility = Utility()
@@ -225,10 +241,10 @@ def main(args):
   train_data = data_utils.complete_wiki_processing(train_data, utility, True)
   dev_data = data_utils.complete_wiki_processing(dev_data, utility, False)
   test_data = data_utils.complete_wiki_processing(test_data, utility, False)
-  print "# train examples ", len(train_data)
-  print "# dev examples ", len(dev_data)
-  print "# test examples ", len(test_data)
-  print "running open source"
+  print("# train examples ", len(train_data))
+  print("# dev examples ", len(dev_data))
+  print("# test examples ", len(test_data))
+  print("running open source")
   #construct TF graph and train or evaluate
   master(train_data, dev_data, utility)
 
