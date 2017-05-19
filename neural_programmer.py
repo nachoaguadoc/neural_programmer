@@ -192,6 +192,7 @@ def master(train_data, dev_data, utility):
         selected_models = {}
         file_list = tf.gfile.ListDirectory(model_dir)
         for model_file in file_list:
+          print(model_file)
           if ("checkpoint" in model_file or "index" in model_file or
               "meta" in model_file):
             continue
@@ -204,14 +205,13 @@ def master(train_data, dev_data, utility):
         if (len(file_list) > 0):
           file_list = file_list[0:len(file_list) - 1]
         print("list of models: ", file_list)
-        for model_file in file_list:
-          model_file = model_file[1]
-          print("restoring: ", model_file)
-          saver.restore(sess, model_dir + "/" + model_file)
-          model_step = int(
-              model_file.split("_")[len(model_file.split("_")) - 1])
-          print("evaluating on dev ", model_file, model_step)
-          evaluate_single(sess, dev_data, batch_size, graph, model_step, utility)
+        model_file = 'model_24500'
+        print("restoring: ", model_file)
+        saver.restore(sess, model_dir + "/" + model_file)
+        model_step = int(
+            model_file.split("_")[len(model_file.split("_")) - 1])
+        print("evaluating on dev ", model_file, model_step)
+        evaluate_single(sess, dev_data, batch_size, graph, model_step, utility)
     else:
       ckpt = tf.train.get_checkpoint_state(model_dir)
       print("model dir: ", model_dir)
