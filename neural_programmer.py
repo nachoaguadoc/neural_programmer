@@ -117,17 +117,22 @@ def evaluate(sess, data, batch_size, graph, i):
   print(num_examples, len(data))
   print("--------")
 
-def evaluate_single(sess, data, batch_size, graph, i):
+def evaluate_single(sess, data, batch_size, graph, i, utility):
   #computes accuracy
-  print("11111111")
-  print(data)
-  print("22222222")
-  for j in range(0, len(data) - batch_size + 1, batch_size):
+  for j in range(0, 100):
     output, select = sess.run([graph.final_error, graph.final_correct],
-                  feed_dict=data_utils.generate_feed_dict(data, j, batch_size,
-                                                              graph))
-    print(output)
-    print(select)
+                  feed_dict=data_utils.generate_feed_dict(data, j, 1, graph))
+    string_question = ""
+    for i in data[j].question:
+      string_question += utility.reverse_word_ids[i] + " "
+    print("Valid:", data[j].is_bad_example)
+    print("Table:", data[j].table_key)
+    print("Question:", data[j].question)
+    print("String Question:", string_question)
+    print("Answer:" data[j].answer)
+    print("Scalar output: ", output[0])
+    print("Lookup output: ", select[0])
+    print("Shapes lookup:", len(select[0]))
     print("**********")
   print("dev set accuracy   after ", i, " : ", gc / num_examples)
   print(num_examples, len(data))
@@ -206,7 +211,7 @@ def master(train_data, dev_data, utility):
           model_step = int(
               model_file.split("_")[len(model_file.split("_")) - 1])
           print("evaluating on dev ", model_file, model_step)
-          evaluate_single(sess, dev_data, batch_size, graph, model_step)
+          evaluate_single(sess, dev_data, batch_size, graph, model_step, utility)
     else:
       ckpt = tf.train.get_checkpoint_state(model_dir)
       print("model dir: ", model_dir)
