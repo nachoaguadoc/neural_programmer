@@ -386,7 +386,7 @@ class Graph():
         tf.tile(tf.expand_dims(softmax_select, 2), [1, 1, self.max_elements]) *
         tf.concat(axis=1, values=select_lists), 1)
     select = select * self.select_whole_mask
-    return output, select
+    return output, self.batch_lookup_answer
 
   def one_pass(self, select, question_embedding, hidden_vectors, hprev,
                prev_select_1, curr_pass):

@@ -125,14 +125,11 @@ def evaluate_single(sess, data, batch_size, graph, i, utility):
     string_question = ""
     for i in data[j].question:
       string_question += utility.reverse_word_ids[i] + " "
-    print("Valid:", data[j].is_bad_example)
     print("Table:", data[j].table_key)
-    print("Question:", data[j].question)
-    print("String Question:", string_question)
+    print("Question:", data[j].utterance)
     print("Answer:", data[j].answer)
     print("Scalar output: ", output[0])
     print("Lookup output: ", select[0])
-    print("Shapes lookup:", len(select[0]))
     print("**********")
   print("dev set accuracy   after ", i, " : ", gc / num_examples)
   print(num_examples, len(data))

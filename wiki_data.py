@@ -128,9 +128,10 @@ def is_number(x):
 
 class WikiExample(object):
 
-  def __init__(self, id, question, answer, table_key):
+  def __init__(self, id, question, answer, table_key, utterance=''):
     self.question_id = id
     self.question = question
+    self.utterance = utterance
     self.answer = answer
     self.table_key = table_key
     self.lookup_matrix = []
@@ -296,7 +297,7 @@ class WikiQuestionGenerator(object):
         question = self.pre_process_sentence(tokens, ner_tags, ner_values)
         target_canon = target_canon.split("|")
         self.annotated_examples[question_id] = WikiExample(
-            question_id, question, target_canon, context)
+            question_id, question, target_canon, context, utterance)
         self.annotated_tables[context] = []
       counter += 1
     print "Annotated examples loaded ", len(self.annotated_examples)
