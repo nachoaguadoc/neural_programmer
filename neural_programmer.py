@@ -119,17 +119,31 @@ def evaluate(sess, data, batch_size, graph, i):
 
 def evaluate_single(sess, data, batch_size, graph, i, utility):
   #computes accuracy
-  for j in range(0, 100):
-    output, select = sess.run([graph.final_error, graph.final_correct],
+  for j in range(800, 1000):
+    answers = sess.run([graph.answers],
                   feed_dict=data_utils.generate_feed_dict(data, j, 1, graph))
-    string_question = ""
-    for i in data[j].question:
-      string_question += utility.reverse_word_ids[i] + " "
     print("Table:", data[j].table_key)
     print("Question:", data[j].utterance)
-    print("Answer:", data[j].answer)
-    print("Scalar output: ", output[0])
-    print("Lookup output: ", select[0])
+    scalar_answer = answers[0][0][0]
+    lookup_answer = answers[0][1][0]
+    print("Scalar output:", scalar_answer)
+    print("Lookup output:")
+    for col in range(len(lookup_answer)):
+      if not all(p == 0 for p in lookup_answer[col]):
+        if col < 15:
+          col_name = data[j].column_names[col]
+        else: 
+          col_name = data[j].word_column_names[col-15]
+        print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
+    print("---------------")
+    print("Word lookup:", data[j].is_word_lookup, ", Number lookup:", data[j].is_number_lookup, ", Number calc:", data[j].is_number_calc)
+    print("Scalar right answer:", data[j].answer)
+    print("Lookup right answer:")    
+    lookup_right_answer = np.transpose(data[j].lookup_matrix)[:]
+    for col in range(len(lookup_right_answer)):
+      if not all(p == 0 for p in lookup_right_answer[col]):
+        col_name = col 
+        print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_right_answer[col]) if e != 0])
     print("**********")
   print("dev set accuracy   after ", i, " : ", gc / num_examples)
   print(num_examples, len(data))
@@ -208,6 +222,7 @@ def master(train_data, dev_data, utility):
         model_step = int(
             model_file.split("_")[len(model_file.split("_")) - 1])
         print("evaluating on dev ", model_file, model_step)
+        #evaluate(sess, dev_data, batch_size, graph, model_step)
         evaluate_single(sess, dev_data, batch_size, graph, model_step, utility)
     else:
       ckpt = tf.train.get_checkpoint_state(model_dir)
@@ -226,6 +241,7 @@ def main(args):
   utility = Utility()
   train_name = "random-split-1-train.examples"
   dev_name = "random-split-1-dev.examples"
+  #dev_name = "my-split.examples"
   test_name = "pristine-unseen-tables.examples"
   #load data
   dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)

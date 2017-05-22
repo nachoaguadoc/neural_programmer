@@ -565,7 +565,6 @@ class Graph():
       if (self.utility.FLAGS.rnn_dropout > 0.0):
         hprev = hprev * history_rnn_dropout_mask
     self.scalar_output = output
-    self.lookup_output = select
     error = self.error_computation()
     cond = tf.less(error, 0.0001, name="cond")
     correct_add = tf.where(
@@ -574,7 +573,12 @@ class Graph():
     error = error / batch_size
     total_error = tf.reduce_sum(error)
     total_correct = correct / batch_size
-    return output, self.batch_lookup_answer
+    #return output, self.batch_lookup_answer
+    self.answers = self.get_answers()
+    return total_error, total_correct
+  
+  def get_answers(self):
+    return (self.scalar_output, self.batch_lookup_answer)  
 
   def compute_error(self):
     #Sets mask variables and performs batch processing
