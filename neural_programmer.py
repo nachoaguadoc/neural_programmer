@@ -27,7 +27,7 @@ import wiki_data
 import parameters
 import data_utils
 
-tf.flags.DEFINE_integer("train_steps", 100001, "Number of steps to train")
+tf.flags.DEFINE_integer("train_steps", 25001, "Number of steps to train")
 tf.flags.DEFINE_integer("eval_cycle", 500,
                         "Evaluate model at every eval_cycle steps")
 tf.flags.DEFINE_integer("max_elements", 100,
@@ -160,6 +160,30 @@ def evaluate_single(sess, data, batch_size, graph, i, utility):
   print(num_examples, len(data))
   print("--------")
 
+def get_prediction(sess, data, graph, utility):
+  #computes accuracy
+  answers = sess.run([graph.answers],
+                feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
+  scalar_answer = answers[0][0][0]
+  lookup_answer = answers[0][1][0]
+  print("Scalar output:", scalar_answer)
+  print("Lookup output:")
+  return_scalar = True
+  lookup_answers = []
+  for col in range(len(lookup_answer)):
+    if not all(p == 0 for p in lookup_answer[col]):
+      return_scalar = False
+      if col < 15:
+        col_name = data[j].column_names[col]
+      else:
+        col_name = data[j].word_column_names[col-15]
+      lookup_answers.append((col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0]))
+      #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
+  if return_scalar:
+    return scalar_answer
+  else:
+    return lookup_answers
+
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
   #performs training
@@ -251,15 +275,11 @@ def master(train_data, dev_data, utility):
 def main(args):
   utility = Utility()
   train_name = "random-split-1-train.examples"
-  #train_name = "my-training.examples"
-  #dev_name = "random-split-1-dev.examples"
   dev_name = "random-split-1-dev.examples"
   test_name = "pristine-unseen-tables.examples"
-  #test_name = "my-training.examplesss"
   #load data
   dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
   train_data, dev_data, test_data = dat.load()
-  print(len(dev_data))
   utility.words = []
   utility.word_ids = {}
   utility.reverse_word_ids = {}
@@ -272,15 +292,41 @@ def main(args):
   #convert data to int format and pad the inputs
   train_data = data_utils.complete_wiki_processing(train_data, utility, True)
   dev_data = data_utils.complete_wiki_processing(dev_data, utility, False)
-  print(len(dev_data))
-  test_data = data_utils.complete_wiki_processing(test_data, utility, False)
+
+  #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
   print("# train examples ", len(train_data))
   print("# dev examples ", len(dev_data))
   print("# test examples ", len(test_data))
   print("running open source")
   #construct TF graph and train or evaluate
-  master(train_data, dev_data, utility)
+  #master(train_data, dev_data, utility)
 
+  model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
+  #create all paramters of the model
+  param_class = parameters.Parameters(utility)
+  params, global_step, init = param_class.parameters(utility)
+  key = "test" if (FLAGS.evaluator_job) else "train"
+  graph = model.Graph(utility, batch_size, utility.FLAGS.max_passes, mode=key)
+  graph.create_graph(params, global_step)
+  #start session
+  with tf.Session() as sess:
+    sess.run(init.name)
+    sess.run(graph.init_op.name)
+    to_save = params.copy()
+    saver = tf.train.Saver(to_save, max_to_keep=500)
+    model_file = 'model_96500'
+    print("restoring: ", model_file)
+    saver.restore(sess, model_dir + "/" + model_file)
+    i = 0
+    while (True):
+      question_id = 'iac-' + str(i)
+      table_key = input("What table do you want?")
+      tokens = input("Ok. Ask me something!")
+      example = wiki_data.load_example(question_id, tokens, table_key)
+      data = [example] 
+      final_data = data_utils.complete_wiki_processing(data, utility, False)
+      answer = get_prediction(sess, final_data, graph, utility)
+      print(answer)
 
 if __name__ == "__main__":
   tf.app.run()

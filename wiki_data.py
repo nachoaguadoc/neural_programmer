@@ -287,6 +287,8 @@ class WikiQuestionGenerator(object):
   def load_annotated_data(self, in_file):
     self.annotated_examples = {}
     self.annotated_tables = {}
+    self.test_examples = {}
+
     f = tf.gfile.GFile(in_file, "r")
     counter = 0
     for line in f:
@@ -302,6 +304,14 @@ class WikiQuestionGenerator(object):
       counter += 1
     print "Annotated examples loaded ", len(self.annotated_examples)
     f.close()
+
+  def load_test_data(self, question_id, tokens, context):
+    question = tokens.split(' ')
+    target_canon = "UNK"
+    self.test_examples[question_id] = WikiExample(
+        question_id, question, target_canon, context, tokens)
+    counter += 1
+    return question
 
   def is_number_column(self, a):
     for w in a:
@@ -503,6 +513,34 @@ class WikiQuestionGenerator(object):
                                                            number_column_indices]
       example.word_lookup_matrix = example.lookup_matrix[:, word_column_indices]
 
+  def answer_classification_test(self, q_id):
+
+    example = self.test_examples[q_id]
+    table_info = self.annotated_tables[example.table_key]
+    # Figure out if the answer is numerical or lookup
+    n_cols = len(table_info.orig_columns)
+    n_rows = len(table_info.orig_columns[0])
+    example.lookup_matrix = np.zeros((n_rows, n_cols))
+
+    # Split up the lookup matrix into word part and number part
+    number_column_indices = table_info.number_column_indices
+    word_column_indices = table_info.word_column_indices
+    example.word_columns = table_info.word_columns
+    example.number_columns = table_info.number_columns
+    example.word_column_names = table_info.word_column_names
+    example.processed_number_columns = table_info.processed_number_columns
+    example.processed_word_columns = table_info.processed_word_columns
+    example.number_column_names = table_info.number_column_names
+    example.number_lookup_matrix = example.lookup_matrix[:,
+                                                         number_column_indices]
+    example.word_lookup_matrix = example.lookup_matrix[:, word_column_indices]
+    return example
+
+  def load_example(self, question_id, tokens, context):
+    question = self.load_test_data(question_id, tokens, context)
+    example = self.answer_classification_test(question_id)
+    return example
+
   def load(self):
     train_data = []
     dev_data = []
@@ -521,12 +559,4 @@ class WikiQuestionGenerator(object):
       example = self.dev_loader.examples[i]
       dev_data.append(self.annotated_examples[example])
 
-    self.load_annotated_data(
-        os.path.join(self.data_folder, "pristine-unseen-tables.annotated"))
-    self.load_annotated_tables()
-    self.answer_classification()
-    self.test_loader.load()
-    for i in range(self.test_loader.num_questions()):
-      example = self.test_loader.examples[i]
-      test_data.append(self.annotated_examples[example])
     return train_data, dev_data, test_data
