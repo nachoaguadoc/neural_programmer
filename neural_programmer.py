@@ -26,7 +26,8 @@ import model
 import wiki_data
 import parameters
 import data_utils
-
+import socket 
+import config
 tf.flags.DEFINE_integer("train_steps", 25001, "Number of steps to train")
 tf.flags.DEFINE_integer("eval_cycle", 500,
                         "Evaluate model at every eval_cycle steps")
@@ -319,20 +320,24 @@ def main(args):
     print("restoring: ", model_file)
     saver.restore(sess, model_dir + "/" + model_file)
     i = 0
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((config.socket_address, config.socket_port))
+    s.listen(1)
     while (True):
+      conn, addr = s.accept()
+      data = conn.recv(1024).decode("utf-8").split("****----****")
+      table_key = data[0]
+      tokens = data[1]
       question_id = 'iac-' + str(i)
-      table_key = raw_input("> What table do you want? \n")
-      while (True):
-        tokens = raw_input("> What do you want to know? Type /new to select a new table. \n")
-        if tokens == '/new':
-          break
-        example = dat.load_example(question_id, tokens, table_key)
-        data = [example] 
-        data_utils.construct_vocab(data, utility, True)
-        final_data = data_utils.complete_wiki_processing(data, utility, False)
-        answer = get_prediction(sess, final_data, graph, utility)
-        print(answer)
-        i += 1
-
+      example = dat.load_example(question_id, tokens, table_key)
+      data = [example] 
+      data_utils.construct_vocab(data, utility, True)
+      final_data = data_utils.complete_wiki_processing(data, utility, False)
+      answer = get_prediction(sess, final_data, graph, utility)
+      print(answer)
+      i += 1
+      conn.send(answer.encode())
+      conn.close()
+      
 if __name__ == "__main__":
   tf.app.run()
