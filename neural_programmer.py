@@ -352,7 +352,7 @@ def main(args):
           final_answer = str(list_answer)
         else:
           for l in list_answer:
-            final_answer += str(l)
+            final_answer += " " + str(l)
       print("Answer:", final_answer)
       i += 1
       conn.send(final_answer.encode())
