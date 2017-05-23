@@ -344,9 +344,9 @@ def main(args):
         row = a[1][0]
         col = a[2]
         if col < 15:
-          final_answer = str(dat.annotated_tables[table_key].number_columns[col][row])
+          final_answer = str(' '.join(dat.annotated_tables[table_key].number_columns[col][row]))
         else:
-          final_answer = str(dat.annotated_tables[table_key].word_columns[col-15][row])
+          final_answer = str(' '.join(dat.annotated_tables[table_key].word_columns[col-15][row]))
 
       print("Answer:", final_answer)
       i += 1
