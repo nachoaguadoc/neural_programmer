@@ -346,7 +346,7 @@ def main(args):
         if col < 15:
           final_answer = str(dat.annotated_tables[table_key].number_columns[col])
         else:
-          final_answer = str(dat.annotated_tables[table_key].number_columns[col-15])
+          final_answer = str(dat.annotated_tables[table_key].word_columns[col-15])
 
       print("Answer:", final_answer)
       i += 1
