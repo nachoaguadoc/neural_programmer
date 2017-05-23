@@ -306,7 +306,7 @@ def main(args):
   param_class = parameters.Parameters(utility)
   params, global_step, init = param_class.parameters(utility)
   key = "test" if (FLAGS.evaluator_job) else "train"
-  graph = model.Graph(utility, batch_size, utility.FLAGS.max_passes, mode=key)
+  graph = model.Graph(utility, 1, utility.FLAGS.max_passes, mode=key)
   graph.create_graph(params, global_step)
   #start session
   with tf.Session() as sess:
@@ -320,8 +320,8 @@ def main(args):
     i = 0
     while (True):
       question_id = 'iac-' + str(i)
-      table_key = input("What table do you want?")
-      tokens = input("Ok. Ask me something!")
+      table_key = raw_input("> What table do you want? \n")
+      tokens = raw_input(">Ok! Ask me something! \n")
       example = wiki_data.load_example(question_id, tokens, table_key)
       data = [example] 
       final_data = data_utils.complete_wiki_processing(data, utility, False)
