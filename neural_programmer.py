@@ -339,9 +339,10 @@ def main(args):
       if answer[1] == 'scalar':
         final_answer = str(answer[0])
       else:
+        print(answer)
         a = answer[0][0]
         row = a[1][0]
-        col = a[2][0]
+        col = a[2]
         if col < 15:
           final_answer = str(dat.annotated_tables[table_key].number_columns[col])
         else:
