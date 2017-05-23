@@ -27,7 +27,7 @@ import wiki_data
 import parameters
 import data_utils
 
-tf.flags.DEFINE_integer("train_steps", 25001, "Number of steps to train")
+tf.flags.DEFINE_integer("train_steps", 100001, "Number of steps to train")
 tf.flags.DEFINE_integer("eval_cycle", 500,
                         "Evaluate model at every eval_cycle steps")
 tf.flags.DEFINE_integer("max_elements", 100,
@@ -51,7 +51,7 @@ tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0,
                       "weighting factor in the objective function")
 tf.flags.DEFINE_string("job_id", "temp", """job id""")
-tf.flags.DEFINE_string("output_dir", "model/twosteps/",
+tf.flags.DEFINE_string("output_dir", "model/twosteps_bis/",
                        """output_dir""")
 tf.flags.DEFINE_string("data_dir", "data/",
                        """data_dir""")
@@ -119,32 +119,43 @@ def evaluate(sess, data, batch_size, graph, i):
 
 def evaluate_single(sess, data, batch_size, graph, i, utility):
   #computes accuracy
-  for j in range(800, 1000):
+  text_file = open("output.txt", "w+")
+  for j in range(0, 1000):
     answers = sess.run([graph.answers],
                   feed_dict=data_utils.generate_feed_dict(data, j, 1, graph))
-    print("Table:", data[j].table_key)
-    print("Question:", data[j].utterance)
+    #print("Table:", data[j].table_key)
+    #print("Question:", data[j].utterance)
     scalar_answer = answers[0][0][0]
     lookup_answer = answers[0][1][0]
-    print("Scalar output:", scalar_answer)
-    print("Lookup output:")
+    #print("Scalar output:", scalar_answer)
+    #print("Lookup output:")
+    to_write = "*******************************" + "\n"
+    to_write += "Table: " + data[j].table_key + '\n' + "Question: " + data[j].utterance + "\n" + "Scalar Output: " + str(scalar_answer) + "\n" + "Lookup output: " + "\n"
     for col in range(len(lookup_answer)):
       if not all(p == 0 for p in lookup_answer[col]):
         if col < 15:
           col_name = data[j].column_names[col]
         else: 
           col_name = data[j].word_column_names[col-15]
-        print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
-    print("---------------")
-    print("Word lookup:", data[j].is_word_lookup, ", Number lookup:", data[j].is_number_lookup, ", Number calc:", data[j].is_number_calc)
-    print("Scalar right answer:", data[j].answer)
-    print("Lookup right answer:")    
+        to_write += "Column name: " + str(col_name) + " Selection: " + str([i for i, e in enumerate(lookup_answer[col]) if e != 0]) + "\n"
+        #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
+    #print("---------------")
+    to_write += "- - - - - - - - - - - - - - - -" + "\n"
+    to_write += "Word lookup:" + str( data[j].is_word_lookup) + ", Number lookup:" + str(data[j].is_number_lookup) + ", Number calc:" + str(data[j].is_number_calc) + "\n"
+    to_write += "Scalar right answer: " + str(data[j].answer) + "\n" + "Lookup right answer:" + "\n"
+    #print("Word lookup:", data[j].is_word_lookup, ", Number lookup:", data[j].is_number_lookup, ", Number calc:", data[j].is_number_calc)
+    #print("Scalar right answer:", data[j].answer)
+    #print("Lookup right answer:")    
     lookup_right_answer = np.transpose(data[j].lookup_matrix)[:]
     for col in range(len(lookup_right_answer)):
       if not all(p == 0 for p in lookup_right_answer[col]):
         col_name = col 
-        print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_right_answer[col]) if e != 0])
-    print("**********")
+        to_write += "Column name: " + str(col_name) + ", Selection: " + str([i for i, e in enumerate(lookup_right_answer[col]) if e != 0]) + "\n"
+        #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_right_answer[col]) if e != 0])
+    to_write += "*******************************" + "\n"
+    text_file.write(to_write)
+    #text_file.close()
+    #print("**********")
   print("dev set accuracy   after ", i, " : ", gc / num_examples)
   print(num_examples, len(data))
   print("--------")
@@ -216,7 +227,7 @@ def master(train_data, dev_data, utility):
         if (len(file_list) > 0):
           file_list = file_list[0:len(file_list) - 1]
         print("list of models: ", file_list)
-        model_file = 'model_24500'
+        model_file = 'model_96500'
         print("restoring: ", model_file)
         saver.restore(sess, model_dir + "/" + model_file)
         model_step = int(
@@ -240,12 +251,15 @@ def master(train_data, dev_data, utility):
 def main(args):
   utility = Utility()
   train_name = "random-split-1-train.examples"
+  #train_name = "my-training.examples"
+  #dev_name = "random-split-1-dev.examples"
   dev_name = "random-split-1-dev.examples"
-  #dev_name = "my-split.examples"
   test_name = "pristine-unseen-tables.examples"
+  #test_name = "my-training.examplesss"
   #load data
   dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
   train_data, dev_data, test_data = dat.load()
+  print(len(dev_data))
   utility.words = []
   utility.word_ids = {}
   utility.reverse_word_ids = {}
@@ -258,6 +272,7 @@ def main(args):
   #convert data to int format and pad the inputs
   train_data = data_utils.complete_wiki_processing(train_data, utility, True)
   dev_data = data_utils.complete_wiki_processing(dev_data, utility, False)
+  print(len(dev_data))
   test_data = data_utils.complete_wiki_processing(test_data, utility, False)
   print("# train examples ", len(train_data))
   print("# dev examples ", len(dev_data))
