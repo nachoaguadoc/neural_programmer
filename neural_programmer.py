@@ -323,18 +323,20 @@ def main(args):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((config.socket_address, config.socket_port))
     s.listen(1)
+    print("Listening to incoming questions...")
     while (True):
       conn, addr = s.accept()
       data = conn.recv(1024).decode("utf-8").split("****----****")
       table_key = data[0]
       tokens = data[1]
       question_id = 'iac-' + str(i)
+      print("Question:", tokens, "Table:", table_key)
       example = dat.load_example(question_id, tokens, table_key)
       data = [example] 
       data_utils.construct_vocab(data, utility, True)
       final_data = data_utils.complete_wiki_processing(data, utility, False)
-      answer = get_prediction(sess, final_data, graph, utility)
-      print(answer)
+      answer = str(get_prediction(sess, final_data, graph, utility))
+      print("Answer:", answer)
       i += 1
       conn.send(answer.encode())
       conn.close()
