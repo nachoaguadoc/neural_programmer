@@ -348,11 +348,11 @@ def main(args):
           list_answer = dat.annotated_tables[table_key].number_columns[col][row]
         else:
           list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
-      if type(list_answer) == float:
-        final_answer = str(list_answer)
-      else:
-        for l in list_answer:
-          final_answer += str(l)
+        if type(list_answer) == float:
+          final_answer = str(list_answer)
+        else:
+          for l in list_answer:
+            final_answer += str(l)
       print("Answer:", final_answer)
       i += 1
       conn.send(final_answer.encode())
