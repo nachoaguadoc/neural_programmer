@@ -322,14 +322,17 @@ def main(args):
     while (True):
       question_id = 'iac-' + str(i)
       table_key = raw_input("> What table do you want? \n")
-      tokens = raw_input("> Ok! Ask me something! \n")
-      example = dat.load_example(question_id, tokens, table_key)
-      data = [example] 
-      data_utils.construct_vocab(data, utility, True)
-      final_data = data_utils.complete_wiki_processing(data, utility, False)
-      answer = get_prediction(sess, final_data, graph, utility)
-      print(answer)
-      i += 1
+      while (True):
+        tokens = raw_input("> What do you want to know? Type /new to select a new table. \n")
+        if tokens == '/new':
+          break
+        example = dat.load_example(question_id, tokens, table_key)
+        data = [example] 
+        data_utils.construct_vocab(data, utility, True)
+        final_data = data_utils.complete_wiki_processing(data, utility, False)
+        answer = get_prediction(sess, final_data, graph, utility)
+        print(answer)
+        i += 1
 
 if __name__ == "__main__":
   tf.app.run()
