@@ -337,7 +337,7 @@ def main(args):
       final_data = data_utils.complete_wiki_processing(data, utility, False)
       answer = get_prediction(sess, final_data, graph, utility)
       if answer[1] == 'scalar':
-        final_answer(str(answer[0]))
+        final_answer = str(answer[0])
       else:
         a = answer[0][0]
         row = a[1][0]
