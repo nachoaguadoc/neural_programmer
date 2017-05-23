@@ -179,12 +179,12 @@ def get_prediction(sess, data, graph, utility):
         col_name = data[j].column_names[col]
       else:
         col_name = data[j].word_column_names[col-15]
-      lookup_answers.append((col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0]))
+      lookup_answers.append([col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
       #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
   if return_scalar:
-    return scalar_answer
+    return (scalar_answer, 'scalar')
   else:
-    return lookup_answers
+    return (lookup_answers, 'lookup')
 
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
@@ -335,10 +335,21 @@ def main(args):
       data = [example] 
       data_utils.construct_vocab(data, utility, True)
       final_data = data_utils.complete_wiki_processing(data, utility, False)
-      answer = str(get_prediction(sess, final_data, graph, utility))
-      print("Answer:", answer)
+      answer = get_prediction(sess, final_data, graph, utility)
+      if answer[1] == 'scalar':
+        conn.send(str(answer[0]).encode())
+      else:
+        a = answer[0][0]
+        row = a[1][0]
+        col = a[2][0]
+        if col < 15:
+          final_answer = str(dat.annotated_tables[table_key].number_columns[col])
+        else:
+          final_answer = str(dat.annotated_tables[table_key].number_columns[col-15])
+
+      print("Answer:", final_answer)
       i += 1
-      conn.send(answer.encode())
+      conn.send(final_answer.encode())
       conn.close()
       
 if __name__ == "__main__":
