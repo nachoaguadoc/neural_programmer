@@ -321,8 +321,8 @@ def main(args):
     while (True):
       question_id = 'iac-' + str(i)
       table_key = raw_input("> What table do you want? \n")
-      tokens = raw_input(">Ok! Ask me something! \n")
-      example = wiki_data.load_example(question_id, tokens, table_key)
+      tokens = raw_input("> Ok! Ask me something! \n")
+      example = dev_data.load_example(question_id, tokens, table_key)
       data = [example] 
       final_data = data_utils.complete_wiki_processing(data, utility, False)
       answer = get_prediction(sess, final_data, graph, utility)

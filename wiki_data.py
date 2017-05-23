@@ -213,6 +213,7 @@ class WikiQuestionGenerator(object):
     self.data_folder = os.path.join(self.root_folder, "annotated/data")
     self.annotated_examples = {}
     self.annotated_tables = {}
+    self.test_examples = {}
     self.annotated_word_reject = {}
     self.annotated_word_reject["-lrb-"] = 1
     self.annotated_word_reject["-rrb-"] = 1
@@ -287,7 +288,6 @@ class WikiQuestionGenerator(object):
   def load_annotated_data(self, in_file):
     self.annotated_examples = {}
     self.annotated_tables = {}
-    self.test_examples = {}
 
     f = tf.gfile.GFile(in_file, "r")
     counter = 0
@@ -310,7 +310,6 @@ class WikiQuestionGenerator(object):
     target_canon = "UNK"
     self.test_examples[question_id] = WikiExample(
         question_id, question, target_canon, context, tokens)
-    counter += 1
     return question
 
   def is_number_column(self, a):
