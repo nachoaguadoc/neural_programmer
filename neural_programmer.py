@@ -336,6 +336,7 @@ def main(args):
       data_utils.construct_vocab(data, utility, True)
       final_data = data_utils.complete_wiki_processing(data, utility, False)
       answer = get_prediction(sess, final_data, graph, utility)
+      final_answer = ''
       if answer[1] == 'scalar':
         final_answer = str(answer[0])
       else:
@@ -344,10 +345,14 @@ def main(args):
         row = a[1][0]
         col = a[2]
         if col < 15:
-          final_answer = str(' '.join(dat.annotated_tables[table_key].number_columns[col][row]))
+          list_answer = dat.annotated_tables[table_key].number_columns[col][row]
         else:
-          final_answer = str(' '.join(dat.annotated_tables[table_key].word_columns[col-15][row]))
-
+          list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+        if type(list_answer) == float:
+          final_answer = str(list_answer)
+        else:
+          for l in list_answer:
+            final_answer += " " + str(l)
       print("Answer:", final_answer)
       i += 1
       conn.send(final_answer.encode())
