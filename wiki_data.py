@@ -305,8 +305,20 @@ class WikiQuestionGenerator(object):
     print "Annotated examples loaded ", len(self.annotated_examples)
     f.close()
 
-  def load_test_data(self, question_id, tokens, context):
-    question = tokens.split(' ')
+  def load_test_data(self, question_id, input, context):
+    tokens = input.split(' ')
+    ner_tags = ''
+    ner_values = ''
+    for t in tokens:
+      if t.isdigit():
+        ner_tags += 'NUMBER|'
+        ner_values += str(float(t)) + '|'
+      else:
+        ner_tags += 'O|'
+        ner_values += '|'
+    ner_tags = ner_tags[:-1]
+    ner_values = ner_values[:-1]
+    question = self.pre_process_sentence(tokens, ner_tags, ner_values)
     target_canon = "UNK"
     self.test_examples[question_id] = WikiExample(
         question_id, question, target_canon, context, tokens)
