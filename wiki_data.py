@@ -302,6 +302,7 @@ class WikiQuestionGenerator(object):
             question_id, question, target_canon, context, utterance)
         self.annotated_tables[context] = []
       counter += 1
+    self.annotated_tables['csv/204-csv/custom-1.csv'] = []
     print "Annotated examples loaded ", len(self.annotated_examples)
     f.close()
 
@@ -309,6 +310,7 @@ class WikiQuestionGenerator(object):
     tokens = input.split(' ')
     ner_tags = ''
     ner_values = ''
+    new_tokens = ''
     for t in tokens:
       if t.isdigit():
         ner_tags += 'NUMBER|'
@@ -316,9 +318,11 @@ class WikiQuestionGenerator(object):
       else:
         ner_tags += 'O|'
         ner_values += '|'
+      new_tokens += t.encode('utf8') + '|'
     ner_tags = ner_tags[:-1]
     ner_values = ner_values[:-1]
-    question = self.pre_process_sentence(tokens, ner_tags, ner_values)
+    new_tokens = new_tokens[:-1]
+    question = self.pre_process_sentence(new_tokens, ner_tags, ner_values)
     target_canon = "UNK"
     self.test_examples[question_id] = WikiExample(
         question_id, question, target_canon, context, tokens)
