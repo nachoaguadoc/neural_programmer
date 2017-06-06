@@ -163,11 +163,22 @@ def evaluate_single(sess, data, batch_size, graph, i, utility):
 
 def get_prediction(sess, data, graph, utility):
   #computes accuracy
-  answers, steps = sess.run([graph.answers, graph.steps],
+  answers = sess.run([graph.answers],
                 feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
   scalar_answer = answers[0][0][0]
   lookup_answer = answers[0][1][0]
-  print("STEPS:", len(steps), len(steps[0]), steps[1])
+  steps = sess.run([graph.steps],
+                feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
+  #print("STEPS:", steps)
+  steps = steps[0]
+  print("------------- Debugging step by step -------------")
+  for i in range(len(steps)):
+    op_index = np.where(steps[i] == 1)[1][0]
+    col_index = 0
+    col = "UNK"
+    op = utility.operations_set[op_index]
+    print("Step" + str(i) + ": Operation " + op + " and Column " + col)
+  print("---------------------------------------")
   print("Scalar output:", scalar_answer)
   print("Lookup output:")
   return_scalar = True
