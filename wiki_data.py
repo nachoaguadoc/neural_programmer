@@ -307,6 +307,15 @@ class WikiQuestionGenerator(object):
     f.close()
 
   def load_test_data(self, question_id, input, context):
+    more_words = ['greater', 'more', 'bigger']
+    less_words = ['lesser', 'less', 'smaller']
+    symb = ''
+    for c in more_words:
+      if c in input:
+        symb = '>'
+    for c in less_words:
+      if c in input:
+        symb = '<'
     tokens = input.split(' ')
     ner_tags = ''
     ner_values = ''
@@ -314,7 +323,7 @@ class WikiQuestionGenerator(object):
     for t in tokens:
       if t.isdigit():
         ner_tags += 'NUMBER|'
-        ner_values += str(float(t)) + '|'
+        ner_values += symb + str(float(t)) + '|'
       else:
         ner_tags += 'O|'
         ner_values += '|'
@@ -322,6 +331,12 @@ class WikiQuestionGenerator(object):
     ner_tags = ner_tags[:-1]
     ner_values = ner_values[:-1]
     new_tokens = new_tokens[:-1]
+    print("NER Tags:", ner_tags)
+    print("NER Values:", ner_values)
+    print("Tokens:", new_tokens)
+    #new_tokens = 'how|many|packages|have|a|price|greater|than|61|?'
+    #ner_tags = 'O|O|O|O|O|O|O|O|NUMBER|O'
+    #ner_values = '||||||||>61.0|'
     question = self.pre_process_sentence(new_tokens, ner_tags, ner_values)
     target_canon = "UNK"
     self.test_examples[question_id] = WikiExample(
