@@ -331,9 +331,9 @@ class WikiQuestionGenerator(object):
     ner_tags = ner_tags[:-1]
     ner_values = ner_values[:-1]
     new_tokens = new_tokens[:-1]
-    print("NER Tags:", ner_tags)
-    print("NER Values:", ner_values)
-    print("Tokens:", new_tokens)
+    #print("NER Tags:", ner_tags)
+    #print("NER Values:", ner_values)
+    #print("Tokens:", new_tokens)
     #new_tokens = 'how|many|packages|have|a|price|greater|than|61|?'
     #ner_tags = 'O|O|O|O|O|O|O|O|NUMBER|O'
     #ner_values = '||||||||>61.0|'
