@@ -170,12 +170,18 @@ def get_prediction(sess, data, graph, utility):
   steps = sess.run([graph.steps],
                 feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
   #print("STEPS:", steps)
-  steps = steps[0]
+  ops = steps[0]['ops']
+  cols = steps[0]['cols']
+  print(cols)
   print("------------- Debugging step by step -------------")
-  for i in range(len(steps)):
-    op_index = np.where(steps[i] == 1)[1][0]
-    col_index = 0
-    col = "UNK"
+  for i in range(len(ops)):
+    op_index = np.where(ops[i] == 1)[1][0]
+    col_index = np.where(cols[i] == 1)[1][0]
+    print("Column index:", col_index)
+    if col_index < 15:
+      col = data[0].column_names[col_index]
+    else:
+      col = data[0].word_column_names[col_index-15]    
     op = utility.operations_set[op_index]
     print("Step" + str(i) + ": Operation " + op + " and Column " + col)
   print("---------------------------------------")

@@ -23,7 +23,8 @@ import nn_utils
 class Graph():
 
   def __init__(self, utility, batch_size, max_passes, mode="train"):
-    self.debug = []
+    self.debug_ops = []
+    self.debug_cols = []
     self.utility = utility
     self.data_type = self.utility.tf_data_type[self.utility.FLAGS.data_type]
     self.max_elements = self.utility.FLAGS.max_elements
@@ -423,7 +424,9 @@ class Graph():
     if (self.mode == "test"):
       full_column_softmax = self.make_hard_softmax(full_column_softmax)
       softmax = self.make_hard_softmax(softmax)
-      self.debug.append(softmax)
+      self.debug_ops.append(softmax)
+      self.debug_cols.append(full_column_softmax)
+
     output, select = self.perform_operations(softmax, full_column_softmax,
                                              select, prev_select_1, curr_pass)
     return output, select, softmax, soft_softmax, full_column_softmax, soft_column_softmax
@@ -583,7 +586,8 @@ class Graph():
   def get_answers(self):
     return (self.scalar_output, self.batch_lookup_answer)  
   def get_steps(self):
-    return self.debug
+    debug = {'ops': self.debug_ops, 'cols': self.debug_cols}
+    return debug
   def compute_error(self):
     #Sets mask variables and performs batch processing
     self.batch_gold_select = self.batch_print_answer > 0.0
