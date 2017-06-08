@@ -337,20 +337,9 @@ class Graph():
                                1)  #BS * max_elements
     select_min = tf.reduce_sum(init_min * select_full_column_softmax,
                                1)  #BS * max_elements
-    select_prev = tf.concat(axis=1, values=[
-        tf.slice(select, [0, 1], [self.batch_size, self.max_elements - 1]),
-        tf.cast(tf.zeros([self.batch_size, 1]), self.data_type)
-    ])
-    select_next = tf.concat(axis=1, values=[
-        tf.cast(tf.zeros([self.batch_size, 1]), self.data_type), tf.slice(
-            select, [0, 0], [self.batch_size, self.max_elements - 1])
-    ])
-    select_last_rs = self.compute_first_or_last(select, False)
-    select_first_rs = self.compute_first_or_last(select, True)
+
     select_word_match = tf.reduce_sum(self.batch_exact_match *
                                       select_full_column_softmax, 1)
-    select_group_by_max = tf.reduce_sum(self.batch_group_by_max *
-                                        select_full_column_softmax, 1)
     length_content = 1
     length_select = 13
     length_print = 1
@@ -375,9 +364,6 @@ class Graph():
     softmax_select = tf.slice(softmax, [0, length_content],
                               [self.batch_size, length_select])
     select_lists = [
-        tf.expand_dims(select_prev, 1), tf.expand_dims(select_next, 1),
-        tf.expand_dims(select_first_rs, 1), tf.expand_dims(select_last_rs, 1),
-        tf.expand_dims(select_group_by_max, 1),
         tf.expand_dims(select_greater, 1), tf.expand_dims(select_lesser, 1),
         tf.expand_dims(select_geq, 1), tf.expand_dims(select_leq, 1),
         tf.expand_dims(select_max, 1), tf.expand_dims(select_min, 1),
