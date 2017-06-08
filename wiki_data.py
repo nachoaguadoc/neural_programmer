@@ -302,7 +302,7 @@ class WikiQuestionGenerator(object):
             question_id, question, target_canon, context, utterance)
         self.annotated_tables[context] = []
       counter += 1
-    self.annotated_tables['csv/204-csv/custom-1.csv'] = []
+    #self.annotated_tables['csv/204-csv/custom-1.csv'] = []
     print "Annotated examples loaded ", len(self.annotated_examples)
     f.close()
 
