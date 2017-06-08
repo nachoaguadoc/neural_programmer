@@ -28,8 +28,8 @@ import parameters
 import data_utils
 import socket 
 import config
-tf.flags.DEFINE_integer("train_steps", 25001, "Number of steps to train")
-tf.flags.DEFINE_integer("eval_cycle", 500,
+tf.flags.DEFINE_integer("train_steps", 100000, "Number of steps to train")
+tf.flags.DEFINE_integer("eval_cycle", 1000,
                         "Evaluate model at every eval_cycle steps")
 tf.flags.DEFINE_integer("max_elements", 100,
                         "maximum rows that are  considered for processing")
@@ -43,7 +43,7 @@ tf.flags.DEFINE_integer("question_length", 62, "maximum question length")
 tf.flags.DEFINE_integer("max_entry_length", 1, "")
 tf.flags.DEFINE_integer("max_passes", 2, "number of operation passes")
 tf.flags.DEFINE_integer("embedding_dims", 256, "")
-tf.flags.DEFINE_integer("batch_size", 1, "")
+tf.flags.DEFINE_integer("batch_size", 20, "")
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
 tf.flags.DEFINE_float("eps", 1e-6, "")
 tf.flags.DEFINE_float("param_init", 0.1, "")
@@ -52,11 +52,11 @@ tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0,
                       "weighting factor in the objective function")
 tf.flags.DEFINE_string("job_id", "temp", """job id""")
-tf.flags.DEFINE_string("output_dir", "model/twosteps_bis/",
+tf.flags.DEFINE_string("output_dir", "model/simple_ops/",
                        """output_dir""")
 tf.flags.DEFINE_string("data_dir", "data/",
                        """data_dir""")
-tf.flags.DEFINE_integer("write_every", 500, "wrtie every N")
+tf.flags.DEFINE_integer("write_every", 1000, "wrtie every N")
 tf.flags.DEFINE_integer("param_seed", 150, "")
 tf.flags.DEFINE_integer("python_seed", 200, "")
 tf.flags.DEFINE_float("dropout", 0.8, "dropout keep probability")
@@ -94,10 +94,7 @@ class Utility:
     self.np_data_type = {}
     self.np_data_type["double"] = np.float64
     self.np_data_type["float"] = np.float32
-    self.operations_set = ["count"] + [
-        "prev", "next", "first_rs", "last_rs", "group_by_max", "greater",
-        "lesser", "geq", "leq", "max", "min", "word-match"
-    ] + ["reset_select"] + ["print"]
+    self.operations_set = ["count"] + ["greater", "lesser", "geq", "leq", "max", "min", "word-match"] + ["reset_select"] + ["print"]
     self.word_ids = {}
     self.reverse_word_ids = {}
     self.word_count = {}
@@ -289,7 +286,34 @@ def master(train_data, dev_data, utility):
       Train(graph, utility, batch_size, train_data, sess, model_dir,
             saver)
 
-
+def main(args):
+  utility = Utility()
+  train_name = "random-split-1-train.examples"
+  dev_name = "random-split-1-dev.examples"
+  test_name = "pristine-unseen-tables.examples"
+  #load data
+  dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
+  train_data, dev_data, test_data = dat.load()
+  utility.words = []
+  utility.word_ids = {}
+  utility.reverse_word_ids = {}
+  #construct vocabulary
+  data_utils.construct_vocab(train_data, utility)
+  data_utils.construct_vocab(dev_data, utility, True)
+  data_utils.construct_vocab(test_data, utility, True)
+  data_utils.add_special_words(utility)
+  data_utils.perform_word_cutoff(utility)
+  #convert data to int format and pad the inputs
+  train_data = data_utils.complete_wiki_processing(train_data, utility, True)
+  dev_data = data_utils.complete_wiki_processing(dev_data, utility, False)
+  test_data = data_utils.complete_wiki_processing(test_data, utility, False)
+  print "# train examples ", len(train_data)
+  print "# dev examples ", len(dev_data)
+  print "# test examples ", len(test_data)
+  print "running open source"
+  #construct TF graph and train or evaluate
+  master(train_data, dev_data, utility)
+'''
 def main(args):
   utility = Utility()
   train_name = "random-split-1-train.examples"
@@ -373,6 +397,6 @@ def main(args):
       i += 1
       conn.send(final_answer.encode())
       conn.close()
-      
+'''      
 if __name__ == "__main__":
   tf.app.run()
