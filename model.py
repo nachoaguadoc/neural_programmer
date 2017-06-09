@@ -63,7 +63,7 @@ class Graph():
 
     self.batch_number_column_names = tf.placeholder(tf.int32, [batch_size, self.num_cols, self.utility.FLAGS.max_entry_length])
     self.batch_number_column_name_mask = tf.placeholder(tf.int32,[batch_size, self.num_cols, self.utility.FLAGS.max_entry_length, self.utility.FLAGS.embedding_dims])
-    self.batch_number_column_lengths = tf.placeholder(tf.int32, [batch_size, self.num_cols])
+    self.batch_number_column_name_lengths = tf.placeholder(tf.int32, [batch_size, self.num_cols])
     self.batch_number_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_cols])
     
     #exact match and group by max operation
