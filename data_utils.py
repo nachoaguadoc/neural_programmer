@@ -103,6 +103,8 @@ def convert_to_int_2d_and_pad(a, utility):
         length += 1
       temp.append(utility.word_ids[word_lookup(word, utility)])
     ans.append(temp)
+    if length == 0:
+      length = 1
     lengths.append(length)
   #print ans
   return ans, lengths
