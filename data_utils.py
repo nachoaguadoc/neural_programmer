@@ -88,6 +88,7 @@ def word_lookup(word, utility):
 
 def convert_to_int_2d_and_pad(a, utility):
   ans = []
+  lengths = []
   #print a
   for b in a:
     temp = []
@@ -98,10 +99,13 @@ def convert_to_int_2d_and_pad(a, utility):
     assert len(b) == utility.FLAGS.max_entry_length
     length = 0
     for word in b:
+      if word != utility.dummy_token:
+        length += 1
       temp.append(utility.word_ids[word_lookup(word, utility)])
     ans.append(temp)
+    lengths.append(length)
   #print ans
-  return ans
+  return ans, lengths
 
 
 def convert_to_bool_and_pad(a, utility):
@@ -432,7 +436,7 @@ def complete_wiki_processing(data, utility, train=True):
           sorted_index = sorted_index + [utility.FLAGS.pad_int] * (
               utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_word_index.append(sorted_index)
-          column = convert_to_int_2d_and_pad(column, utility)
+          column, _ = convert_to_int_2d_and_pad(column, utility)
           example.word_columns[start] = column + [[
               utility.word_ids[utility.dummy_token]
           ] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements -
@@ -468,7 +472,7 @@ def complete_wiki_processing(data, utility, train=True):
       true_mask = [1] * utility.FLAGS.embedding_dims
       false_mask = [0] * utility.FLAGS.embedding_dims
 
-      example.column_ids = convert_to_int_2d_and_pad(example.column_names, utility)
+      example.column_ids, example.column_name_lengths = convert_to_int_2d_and_pad(example.column_names, utility)
       example.column_name_mask = []
       for ci in example.column_ids:
         temp_mask = []
@@ -479,7 +483,7 @@ def complete_wiki_processing(data, utility, train=True):
             temp_mask.append(true_mask)
         example.column_name_mask.append(temp_mask)
 
-      example.word_column_ids = convert_to_int_2d_and_pad(example.word_column_names, utility)
+      example.word_column_ids, example.word_column_name_lengths = convert_to_int_2d_and_pad(example.word_column_names, utility)
       example.word_column_name_mask = []
       for ci in example.word_column_ids:
         temp_mask = []
@@ -678,6 +682,9 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
   feed_dict[gr.batch_number_column_name_mask] = [
       feed_examples[j].column_name_mask for j in range(batch_size)
   ]
+  feed_dict[gr.batch_number_column_name_lengths] = [
+      feed_examples[j].column_name_lengths for j in range(batch_size)
+  ]
   feed_dict[gr.batch_processed_word_column] = [
       feed_examples[j].processed_word_columns for j in range(batch_size)
   ]
@@ -689,6 +696,9 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
   ]
   feed_dict[gr.batch_word_column_name_mask] = [
       feed_examples[j].word_column_name_mask for j in range(batch_size)
+  ]
+  feed_dict[gr.batch_word_column_name_lengths] = [
+      feed_examples[j].word_column_name_lengths for j in range(batch_size)
   ]
   feed_dict[gr.batch_word_column_entry_mask] = [
       feed_examples[j].word_column_entry_mask for j in range(batch_size)
