@@ -18,7 +18,10 @@
 import tensorflow as tf
 
 def get_embedding(word, utility, params, mask=None):
-  return tf.nn.embedding_lookup(params["word"], word)
+  embeddings = tf.nn.embedding_lookup(params["word"], word)
+  if mask != None:
+    embeddings = tf.multiply(embeddings, mask)
+  return embeddings
 
 
 def apply_dropout(x, dropout_rate, mode):
