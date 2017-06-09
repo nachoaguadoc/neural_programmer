@@ -88,6 +88,7 @@ def word_lookup(word, utility):
 
 def convert_to_int_2d_and_pad(a, utility):
   ans = []
+  lengths = []
   #print a
   for b in a:
     temp = []
@@ -96,11 +97,15 @@ def convert_to_int_2d_and_pad(a, utility):
     for remaining in range(len(b), utility.FLAGS.max_entry_length):
       b.append(utility.dummy_token)
     assert len(b) == utility.FLAGS.max_entry_length
+    length = 0
     for word in b:
+      if word != utility.dummy_token:
+        length += 1
       temp.append(utility.word_ids[word_lookup(word, utility)])
     ans.append(temp)
+    lengths.append(length)
   #print ans
-  return ans
+  return ans, lengths
 
 
 def convert_to_bool_and_pad(a, utility):
@@ -431,7 +436,7 @@ def complete_wiki_processing(data, utility, train=True):
           sorted_index = sorted_index + [utility.FLAGS.pad_int] * (
               utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_word_index.append(sorted_index)
-          column = convert_to_int_2d_and_pad(column, utility)
+          column, _ = convert_to_int_2d_and_pad(column, utility)
           example.word_columns[start] = column + [[
               utility.word_ids[utility.dummy_token]
           ] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements -
@@ -464,10 +469,8 @@ def complete_wiki_processing(data, utility, train=True):
                                            utility.FLAGS.max_entry_length)
         seen_tables[example.table_key] = 1
       #convert column and word column names to integers
-      example.column_ids = convert_to_int_2d_and_pad(example.column_names,
-                                                     utility)
-      example.word_column_ids = convert_to_int_2d_and_pad(
-          example.word_column_names, utility)
+      example.column_ids, example.column_lengths = convert_to_int_2d_and_pad(example.column_names, utility)
+      example.word_column_ids, example.word_column_lengths = convert_to_int_2d_and_pad(example.word_column_names, utility)
       for i_em in range(len(example.number_exact_match)):
         example.number_exact_match[i_em] = example.number_exact_match[
             i_em] + [0.0] * (utility.FLAGS.max_elements -
@@ -653,6 +656,9 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
   feed_dict[gr.batch_number_column_names] = [
       feed_examples[j].column_ids for j in range(batch_size)
   ]
+  feed_dict[gr.batch_number_column_lengths] = [
+      feed_examples[j].column_lengths for j in range(batch_size)
+  ]
   feed_dict[gr.batch_processed_word_column] = [
       feed_examples[j].processed_word_columns for j in range(batch_size)
   ]
@@ -661,6 +667,9 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
   ]
   feed_dict[gr.batch_word_column_names] = [
       feed_examples[j].word_column_ids for j in range(batch_size)
+  ]
+  feed_dict[gr.batch_word_column_lengths] = [
+      feed_examples[j].word_column_lengths for j in range(batch_size)
   ]
   feed_dict[gr.batch_word_column_entry_mask] = [
       feed_examples[j].word_column_entry_mask for j in range(batch_size)

@@ -28,6 +28,7 @@ class Graph():
     self.utility = utility
     self.data_type = self.utility.tf_data_type[self.utility.FLAGS.data_type]
     self.max_elements = self.utility.FLAGS.max_elements
+    
     max_elements = self.utility.FLAGS.max_elements
     self.num_cols = self.utility.FLAGS.max_number_cols
     self.num_word_cols = self.utility.FLAGS.max_word_cols
@@ -37,62 +38,43 @@ class Graph():
     self.mode = mode
     self.embedding_dims = self.utility.FLAGS.embedding_dims
     #input question and a mask
-    self.batch_question = tf.placeholder(tf.int32,
-                                         [batch_size, self.question_length])
-    self.batch_question_attention_mask = tf.placeholder(
-        self.data_type, [batch_size, self.question_length])
+    self.batch_question = tf.placeholder(tf.int32, [batch_size, self.question_length])
+    self.batch_question_attention_mask = tf.placeholder(self.data_type, [batch_size, self.question_length])
+
     #ground truth scalar answer and lookup answer
     self.batch_answer = tf.placeholder(self.data_type, [batch_size])
-    self.batch_print_answer = tf.placeholder(
-        self.data_type,
-        [batch_size, self.num_cols + self.num_word_cols, max_elements])
+    self.batch_print_answer = tf.placeholder(self.data_type, [batch_size, self.num_cols + self.num_word_cols, max_elements])
+
     #number columns and its processed version
-    self.batch_number_column = tf.placeholder(
-        self.data_type, [batch_size, self.num_cols, max_elements
-                        ])  #columns with numeric entries
-    self.batch_processed_number_column = tf.placeholder(
-        self.data_type, [batch_size, self.num_cols, max_elements])
-    self.batch_processed_sorted_index_number_column = tf.placeholder(
-        tf.int32, [batch_size, self.num_cols, max_elements])
+    self.batch_number_column = tf.placeholder(self.data_type, [batch_size, self.num_cols, max_elements])  #columns with numeric entries
+    self.batch_processed_number_column = tf.placeholder(self.data_type, [batch_size, self.num_cols, max_elements])
+    self.batch_processed_sorted_index_number_column = tf.placeholder(tf.int32, [batch_size, self.num_cols, max_elements])
+
     #word columns and its processed version
-    self.batch_processed_word_column = tf.placeholder(
-        self.data_type, [batch_size, self.num_word_cols, max_elements])
-    self.batch_processed_sorted_index_word_column = tf.placeholder(
-        tf.int32, [batch_size, self.num_word_cols, max_elements])
-    self.batch_word_column_entry_mask = tf.placeholder(
-        tf.int32, [batch_size, self.num_word_cols, max_elements])
+    self.batch_processed_word_column = tf.placeholder(self.data_type, [batch_size, self.num_word_cols, max_elements])
+    self.batch_processed_sorted_index_word_column = tf.placeholder(tf.int32, [batch_size, self.num_word_cols, max_elements])
+    self.batch_word_column_entry_mask = tf.placeholder(tf.int32, [batch_size, self.num_word_cols, max_elements])
+
     #names of word and number columns along with their mask
-    self.batch_word_column_names = tf.placeholder(
-        tf.int32,
-        [batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length])
-    self.batch_word_column_mask = tf.placeholder(
-        self.data_type, [batch_size, self.num_word_cols])
-    self.batch_number_column_names = tf.placeholder(
-        tf.int32,
-        [batch_size, self.num_cols, self.utility.FLAGS.max_entry_length])
-    self.batch_number_column_mask = tf.placeholder(self.data_type,
-                                                   [batch_size, self.num_cols])
+    self.batch_word_column_names = tf.placeholder(tf.int32,[batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length])
+    self.batch_word_column_lengths = tf.placeholder(tf.int32, [batch_size, self.num_word_cols])
+    self.batch_word_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_word_cols])
+    self.batch_number_column_names = tf.placeholder(tf.int32, [batch_size, self.num_cols, self.utility.FLAGS.max_entry_length])
+    self.batch_word_column_lengths = tf.placeholder(tf.int32, [batch_size, self.num_cols])
+    self.batch_number_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_cols])
+    
     #exact match and group by max operation
-    self.batch_exact_match = tf.placeholder(
-        self.data_type,
-        [batch_size, self.num_cols + self.num_word_cols, max_elements])
-    self.batch_column_exact_match = tf.placeholder(
-        self.data_type, [batch_size, self.num_cols + self.num_word_cols])
-    self.batch_group_by_max = tf.placeholder(
-        self.data_type,
-        [batch_size, self.num_cols + self.num_word_cols, max_elements])
+    self.batch_exact_match = tf.placeholder(self.data_type,[batch_size, self.num_cols + self.num_word_cols, max_elements])
+    self.batch_column_exact_match = tf.placeholder(self.data_type, [batch_size, self.num_cols + self.num_word_cols])
+    self.batch_group_by_max = tf.placeholder(self.data_type,[batch_size, self.num_cols + self.num_word_cols, max_elements])
+    
     #numbers in the question along with their position. This is used to compute arguments to the comparison operations
     self.batch_question_number = tf.placeholder(self.data_type, [batch_size, 1])
-    self.batch_question_number_one = tf.placeholder(self.data_type,
-                                                    [batch_size, 1])
-    self.batch_question_number_mask = tf.placeholder(
-        self.data_type, [batch_size, max_elements])
-    self.batch_question_number_one_mask = tf.placeholder(self.data_type,
-                                                         [batch_size, 1])
-    self.batch_ordinal_question = tf.placeholder(
-        self.data_type, [batch_size, self.question_length])
-    self.batch_ordinal_question_one = tf.placeholder(
-        self.data_type, [batch_size, self.question_length])
+    self.batch_question_number_one = tf.placeholder(self.data_type,[batch_size, 1])
+    self.batch_question_number_mask = tf.placeholder(self.data_type, [batch_size, max_elements])
+    self.batch_question_number_one_mask = tf.placeholder(self.data_type,[batch_size, 1])
+    self.batch_ordinal_question = tf.placeholder(self.data_type, [batch_size, self.question_length])
+    self.batch_ordinal_question_one = tf.placeholder(self.data_type, [batch_size, self.question_length])
 
   def LSTM_question_embedding(self, sentence, sentence_length):
     #LSTM processes the input question
@@ -202,6 +184,7 @@ class Graph():
   #computes embeddings for column names using parameters of question module
   def get_column_hidden_vectors(self):
     #vector representations for the column names
+
     self.column_hidden_vectors = tf.reduce_sum(
         nn_utils.get_embedding(self.batch_number_column_names, self.utility,
                                self.params), 2)
