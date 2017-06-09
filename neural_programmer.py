@@ -29,7 +29,7 @@ import data_utils
 import socket 
 import config
 tf.flags.DEFINE_integer("train_steps", 100001, "Number of steps to train")
-tf.flags.DEFINE_integer("eval_cycle", 500,0
+tf.flags.DEFINE_integer("eval_cycle", 500,
                         "Evaluate model at every eval_cycle steps")
 tf.flags.DEFINE_integer("max_elements", 100,
                         "maximum rows that are  considered for processing")
@@ -40,10 +40,10 @@ tf.flags.DEFINE_integer(
     "max_word_cols", 25,
     "maximum number columns that are considered for processing")
 tf.flags.DEFINE_integer("question_length", 62, "maximum question length")
-tf.flags.DEFINE_integer("max_entry_length", 1, "")
-tf.flags.DEFINE_integer("max_passes", 2, "number of operation passes")
+tf.flags.DEFINE_integer("max_entry_length", 3, "")
+tf.flags.DEFINE_integer("max_passes", 4, "number of operation passes")
 tf.flags.DEFINE_integer("embedding_dims", 256, "")
-tf.flags.DEFINE_integer("batch_size", 1, "")
+tf.flags.DEFINE_integer("batch_size", 20, "")
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
 tf.flags.DEFINE_float("eps", 1e-6, "")
 tf.flags.DEFINE_float("param_init", 0.1, "")
@@ -52,7 +52,7 @@ tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0,
                       "weighting factor in the objective function")
 tf.flags.DEFINE_string("job_id", "temp", """job id""")
-tf.flags.DEFINE_string("output_dir", "model/twosteps_bis/",
+tf.flags.DEFINE_string("output_dir", "model/embeddings/",
                        """output_dir""")
 tf.flags.DEFINE_string("data_dir", "data/",
                        """data_dir""")

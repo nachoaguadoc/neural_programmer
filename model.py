@@ -192,8 +192,12 @@ class Graph():
 
     column_embeddings = nn_utils.get_embedding(self.batch_number_column_names, self.utility, self.params, self.batch_number_column_name_mask)
     word_column_embeddings = nn_utils.get_embedding(self.batch_word_column_names, self.utility, self.params, self.batch_word_column_name_mask)
-    self.column_hidden_vectors = tf.divide(tf.reduce_sum(column_embeddings, 2), column_lengths)
-    self.word_column_hidden_vectors = tf.divide(tf.reduce_sum(word_column_embeddings, 2), word_column_lengths)
+    
+    column_sum = tf.reduce_sum(column_embeddings, 2)
+    word_column_sum = tf.reduce_sum(word_column_embeddings, 2)
+
+    self.column_hidden_vectors = tf.divide(column_sum, column_lengths)
+    self.word_column_hidden_vectors = tf.divide(word_column_sum, word_column_lengths)
 
   def create_summary_embeddings(self):
     #embeddings for each text entry in the table using parameters of the question module
