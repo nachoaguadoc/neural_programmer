@@ -187,8 +187,8 @@ class Graph():
   #computes embeddings for column names using parameters of question module
   def get_column_hidden_vectors(self):
     #vector representations for the column names
-    column_lengths = tf.reshape(self.batch_number_column_name_lengths, [self.batch_size, 1, 1, 1])
-    word_column_lengths = tf.reshape(self.batch_word_column_name_lengths, [self.batch_size, 1, 1, 1])
+    column_lengths = tf.reshape(self.batch_number_column_name_lengths, [self.batch_size, self.num_cols, 1, 1])
+    word_column_lengths = tf.reshape(self.batch_word_column_name_lengths, [self.batch_size, self.num_word_cols, 1, 1])
 
     column_embeddings = nn_utils.get_embedding(self.batch_number_column_names, self.utility, self.params, self.batch_number_column_name_mask)
     word_column_embeddings = nn_utils.get_embedding(self.batch_word_column_names, self.utility, self.params, self.batch_word_column_name_mask)

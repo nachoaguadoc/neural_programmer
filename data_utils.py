@@ -469,8 +469,8 @@ def complete_wiki_processing(data, utility, train=True):
                                            utility.FLAGS.max_entry_length)
         seen_tables[example.table_key] = 1
       #convert column and word column names to integers
-      true_mask = [1] * utility.FLAGS.embedding_dims
-      false_mask = [0] * utility.FLAGS.embedding_dims
+      true_mask = [1.] * utility.FLAGS.embedding_dims
+      false_mask = [0.] * utility.FLAGS.embedding_dims
 
       example.column_ids, example.column_name_lengths = convert_to_int_2d_and_pad(example.column_names, utility)
       example.column_name_mask = []
