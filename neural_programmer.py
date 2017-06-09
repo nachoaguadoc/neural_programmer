@@ -28,8 +28,8 @@ import parameters
 import data_utils
 import socket 
 import config
-tf.flags.DEFINE_integer("train_steps", 25001, "Number of steps to train")
-tf.flags.DEFINE_integer("eval_cycle", 500,
+tf.flags.DEFINE_integer("train_steps", 100001, "Number of steps to train")
+tf.flags.DEFINE_integer("eval_cycle", 500,0
                         "Evaluate model at every eval_cycle steps")
 tf.flags.DEFINE_integer("max_elements", 100,
                         "maximum rows that are  considered for processing")
@@ -317,62 +317,64 @@ def main(args):
   print("# test examples ", len(test_data))
   print("running open source")
   #construct TF graph and train or evaluate
-  #master(train_data, dev_data, utility)
-
-  model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
-  #create all paramters of the model
-  param_class = parameters.Parameters(utility)
-  params, global_step, init = param_class.parameters(utility)
   key = "test" if (FLAGS.evaluator_job) else "train"
-  graph = model.Graph(utility, 1, utility.FLAGS.max_passes, mode=key)
-  graph.create_graph(params, global_step)
-  #start session
-  with tf.Session() as sess:
-    sess.run(init.name)
-    sess.run(graph.init_op.name)
-    to_save = params.copy()
-    saver = tf.train.Saver(to_save, max_to_keep=500)
-    model_file = 'model_96500'
-    print("restoring: ", model_file)
-    saver.restore(sess, model_dir + "/" + model_file)
-    i = 0
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((config.socket_address, config.socket_port))
-    s.listen(1)
-    print("Listening to incoming questions...")
-    while (True):
-      conn, addr = s.accept()
-      data = conn.recv(1024).decode("utf-8").split("****----****")
-      table_key = data[0]
-      tokens = data[1]
-      question_id = 'iac-' + str(i)
-      print("Question:", tokens, "Table:", table_key)
-      example = dat.load_example(question_id, tokens, table_key)
-      data = [example] 
-      data_utils.construct_vocab(data, utility, True)
-      final_data = data_utils.complete_wiki_processing(data, utility, False)
-      answer = get_prediction(sess, final_data, graph, utility)
-      final_answer = ''
-      if answer[1] == 'scalar':
-        final_answer = str(answer[0])
-      else:
-        print(answer)
-        a = answer[0][0]
-        row = a[1][0]
-        col = a[2]
-        if col < 15:
-          list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+  if key == "train":
+    master(train_data, dev_data, utility)
+  else:
+    model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
+    #create all paramters of the model
+    param_class = parameters.Parameters(utility)
+    params, global_step, init = param_class.parameters(utility)
+    
+    graph = model.Graph(utility, 1, utility.FLAGS.max_passes, mode=key)
+    graph.create_graph(params, global_step)
+    #start session
+    with tf.Session() as sess:
+      sess.run(init.name)
+      sess.run(graph.init_op.name)
+      to_save = params.copy()
+      saver = tf.train.Saver(to_save, max_to_keep=500)
+      model_file = 'model_96500'
+      print("restoring: ", model_file)
+      saver.restore(sess, model_dir + "/" + model_file)
+      i = 0
+      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      s.bind((config.socket_address, config.socket_port))
+      s.listen(1)
+      print("Listening to incoming questions...")
+      while (True):
+        conn, addr = s.accept()
+        data = conn.recv(1024).decode("utf-8").split("****----****")
+        table_key = data[0]
+        tokens = data[1]
+        question_id = 'iac-' + str(i)
+        print("Question:", tokens, "Table:", table_key)
+        example = dat.load_example(question_id, tokens, table_key)
+        data = [example] 
+        data_utils.construct_vocab(data, utility, True)
+        final_data = data_utils.complete_wiki_processing(data, utility, False)
+        answer = get_prediction(sess, final_data, graph, utility)
+        final_answer = ''
+        if answer[1] == 'scalar':
+          final_answer = str(answer[0])
         else:
-          list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
-        if type(list_answer) == float:
-          final_answer = str(list_answer)
-        else:
-          for l in list_answer:
-            final_answer += " " + str(l)
-      print("Answer:", final_answer)
-      i += 1
-      conn.send(final_answer.encode())
-      conn.close()
+          print(answer)
+          a = answer[0][0]
+          row = a[1][0]
+          col = a[2]
+          if col < 15:
+            list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+          else:
+            list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+          if type(list_answer) == float:
+            final_answer = str(list_answer)
+          else:
+            for l in list_answer:
+              final_answer += " " + str(l)
+        print("Answer:", final_answer)
+        i += 1
+        conn.send(final_answer.encode())
+        conn.close()
       
 if __name__ == "__main__":
   tf.app.run()
