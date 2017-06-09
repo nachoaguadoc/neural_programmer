@@ -474,9 +474,9 @@ def complete_wiki_processing(data, utility, train=True):
         temp_mask = []
         for id_ in ci:
           if id_== utility.dummy_token_id:
-            temp_mask.append(true_mask)
-          else:
             temp_mask.append(false_mask)
+          else:
+            temp_mask.append(true_mask)
         example.column_name_mask.append(temp_mask)
 
       example.word_column_ids = convert_to_int_2d_and_pad(example.word_column_names, utility)
@@ -485,9 +485,9 @@ def complete_wiki_processing(data, utility, train=True):
         temp_mask = []
         for id_ in ci:
           if id_== utility.dummy_token_id:
-            temp_mask.append(true_mask)
-          else:
             temp_mask.append(false_mask)
+          else:
+            temp_mask.append(true_mask)
         example.word_column_name_mask.append(temp_mask)
 
       for i_em in range(len(example.number_exact_match)):
