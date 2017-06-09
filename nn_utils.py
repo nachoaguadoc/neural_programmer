@@ -17,7 +17,7 @@
 
 import tensorflow as tf
 
-def get_embedding(word, utility, params):
+def get_embedding(word, utility, params, mask=None):
   return tf.nn.embedding_lookup(params["word"], word)
 
 

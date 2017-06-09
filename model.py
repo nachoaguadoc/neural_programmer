@@ -28,7 +28,7 @@ class Graph():
     self.utility = utility
     self.data_type = self.utility.tf_data_type[self.utility.FLAGS.data_type]
     self.max_elements = self.utility.FLAGS.max_elements
-    
+
     max_elements = self.utility.FLAGS.max_elements
     self.num_cols = self.utility.FLAGS.max_number_cols
     self.num_word_cols = self.utility.FLAGS.max_word_cols
@@ -57,10 +57,10 @@ class Graph():
 
     #names of word and number columns along with their mask
     self.batch_word_column_names = tf.placeholder(tf.int32,[batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length])
-    self.batch_word_column_lengths = tf.placeholder(tf.int32, [batch_size, self.num_word_cols])
+    self.batch_word_column_name_mask = tf.placeholder(tf.int32,[batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length])
     self.batch_word_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_word_cols])
     self.batch_number_column_names = tf.placeholder(tf.int32, [batch_size, self.num_cols, self.utility.FLAGS.max_entry_length])
-    self.batch_word_column_lengths = tf.placeholder(tf.int32, [batch_size, self.num_cols])
+    self.batch_number_column_name_mask = tf.placeholder(tf.int32,[batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length])
     self.batch_number_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_cols])
     
     #exact match and group by max operation
@@ -184,13 +184,8 @@ class Graph():
   #computes embeddings for column names using parameters of question module
   def get_column_hidden_vectors(self):
     #vector representations for the column names
-
-    self.column_hidden_vectors = tf.reduce_sum(
-        nn_utils.get_embedding(self.batch_number_column_names, self.utility,
-                               self.params), 2)
-    self.word_column_hidden_vectors = tf.reduce_sum(
-        nn_utils.get_embedding(self.batch_word_column_names, self.utility,
-                               self.params), 2)
+    self.column_hidden_vectors = tf.reduce_sum(nn_utils.get_embedding(self.batch_number_column_names, self.utility, self.params, self.batch_number_column_name_mask), 2)
+    self.word_column_hidden_vectors = tf.reduce_sum(nn_utils.get_embedding(self.batch_word_column_names, self.utility, self.params, self.batch_word_column_name_mask), 2)
 
   def create_summary_embeddings(self):
     #embeddings for each text entry in the table using parameters of the question module
