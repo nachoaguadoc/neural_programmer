@@ -112,11 +112,13 @@ def evaluate(sess, data, batch_size, graph, i):
     [ct] = sess.run([graph.final_correct],
                     feed_dict=data_utils.generate_feed_dict(data, j, batch_size,
                                                             graph))
+    print("******************************")
+    print(ct)
     gc += ct * batch_size
     num_examples += batch_size
-  print("dev set accuracy   after ", i, " : ", gc / num_examples)
-  print(num_examples, len(data))
-  print("--------")
+  print "dev set accuracy   after ", i, " : ", gc / num_examples
+  print num_examples, len(data)
+  print "--------"
 
 def evaluate_single(sess, data, batch_size, graph, i, utility):
   #computes accuracy
@@ -221,6 +223,11 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
         [graph.step, graph.total_cost],
         feed_dict=data_utils.generate_feed_dict(
             train_data, curr, batch_size, graph, train=True, utility=utility))
+    deb = sess.run(
+        [graph.deb],
+        feed_dict=data_utils.generate_feed_dict(
+            train_data, curr, batch_size, graph, train=True, utility=utility))
+    print(deb)
     curr = curr + batch_size
     train_set_loss += cost_value
     if (i > 0 and i % FLAGS.eval_cycle == 0):
@@ -235,7 +242,7 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
 def master(train_data, dev_data, utility):
   #creates TF graph and calls trainer or evaluator
   batch_size = utility.FLAGS.batch_size 
-  model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
+  model_dir = utility.FLAGS.output_dir + "/model" + utility.FLAGS.job_id + "/"
   #create all paramters of the model
   param_class = parameters.Parameters(utility)
   params, global_step, init = param_class.parameters(utility)
@@ -256,7 +263,6 @@ def master(train_data, dev_data, utility):
         selected_models = {}
         file_list = tf.gfile.ListDirectory(model_dir)
         for model_file in file_list:
-          print(model_file)
           if ("checkpoint" in model_file or "index" in model_file or
               "meta" in model_file):
             continue
@@ -268,23 +274,23 @@ def master(train_data, dev_data, utility):
         file_list = sorted(selected_models.items(), key=lambda x: x[0])
         if (len(file_list) > 0):
           file_list = file_list[0:len(file_list) - 1]
-        print("list of models: ", file_list)
-        model_file = 'model_96500'
-        print("restoring: ", model_file)
-        saver.restore(sess, model_dir + "/" + model_file)
-        model_step = int(
-            model_file.split("_")[len(model_file.split("_")) - 1])
-        print("evaluating on dev ", model_file, model_step)
-        #evaluate(sess, dev_data, batch_size, graph, model_step)
-        evaluate_single(sess, dev_data, batch_size, graph, model_step, utility)
+        print "list of models: ", file_list
+        for model_file in file_list:
+          model_file = model_file[1]
+          print "restoring: ", model_file
+          saver.restore(sess, model_dir + "/" + model_file)
+          model_step = int(
+              model_file.split("_")[len(model_file.split("_")) - 1])
+          print "evaluating on dev ", model_file, model_step
+          evaluate(sess, dev_data, batch_size, graph, model_step)
     else:
       ckpt = tf.train.get_checkpoint_state(model_dir)
-      print("model dir: ", model_dir)
+      print "model dir: ", model_dir
       if (not (tf.gfile.IsDirectory(utility.FLAGS.output_dir))):
-        print("create dir: ", utility.FLAGS.output_dir)
+        print "create dir: ", utility.FLAGS.output_dir
         tf.gfile.MkDir(utility.FLAGS.output_dir)
       if (not (tf.gfile.IsDirectory(model_dir))):
-        print("create dir: ", model_dir)
+        print "create dir: ", model_dir
         tf.gfile.MkDir(model_dir)
       Train(graph, utility, batch_size, train_data, sess, model_dir,
             saver)
