@@ -41,9 +41,9 @@ tf.flags.DEFINE_integer(
     "maximum number columns that are considered for processing")
 tf.flags.DEFINE_integer("question_length", 62, "maximum question length")
 tf.flags.DEFINE_integer("max_entry_length", 3, "")
-tf.flags.DEFINE_integer("max_passes", 4, "number of operation passes")
+tf.flags.DEFINE_integer("max_passes", 2, "number of operation passes")
 tf.flags.DEFINE_integer("embedding_dims", 256, "")
-tf.flags.DEFINE_integer("batch_size", 20, "")
+tf.flags.DEFINE_integer("batch_size", 1, "")
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
 tf.flags.DEFINE_float("eps", 1e-6, "")
 tf.flags.DEFINE_float("param_init", 0.1, "")
@@ -54,6 +54,7 @@ tf.flags.DEFINE_float("print_cost", 50.0,
 tf.flags.DEFINE_string("job_id", "_baseline", """job id""")
 tf.flags.DEFINE_string("output_dir", "model/embeddings/",
                        """output_dir""")
+tf.flags.DEFINE_string("model_id", "96500", """model id""")
 tf.flags.DEFINE_string("data_dir", "data/",
                        """data_dir""")
 tf.flags.DEFINE_integer("write_every", 500, "write every N")
@@ -171,7 +172,7 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
   for i in range(utility.FLAGS.train_steps):
     curr_step = i
     if (i > 0 and i % FLAGS.write_every == 0):
-      model_file = model_dir + "/model_" + str(i)
+      model_file = model_dir + "model_" + str(i)
       saver.save(sess, model_file)
     if curr + batch_size >= len(train_data):
       curr = 0
@@ -180,11 +181,6 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
         [graph.step, graph.total_cost],
         feed_dict=data_utils.generate_feed_dict(
             train_data, curr, batch_size, graph, train=True, utility=utility))
-    deb = sess.run(
-        [graph.deb],
-        feed_dict=data_utils.generate_feed_dict(
-            train_data, curr, batch_size, graph, train=True, utility=utility))
-    print(deb)
     curr = curr + batch_size
     train_set_loss += cost_value
     if (i > 0 and i % FLAGS.eval_cycle == 0):
@@ -195,7 +191,7 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
       print(" printing train set loss: ", train_set_loss / utility.FLAGS.eval_cycle)
       train_set_loss = 0.0
 
-def Demo(graph, utility, sess, model_dir, saver):
+def Demo(graph, utility, sess, model_dir, dat):
   i = 0
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   s.bind((config.socket_address, config.socket_port))
@@ -236,14 +232,15 @@ def Demo(graph, utility, sess, model_dir, saver):
     conn.close() 
 
 
-def master(train_data, dev_data, utility):
+def master(train_data, dev_data, utility, dat):
   #creates TF graph and calls trainer or evaluator
   batch_size = utility.FLAGS.batch_size 
-  model_dir = utility.FLAGS.output_dir + "/model" + utility.FLAGS.job_id + "/"
+  model_dir = utility.FLAGS.output_dir + "/model_" + utility.FLAGS.job_id + "/"
   #create all paramters of the model
   param_class = parameters.Parameters(utility)
   params, global_step, init = param_class.parameters(utility)
   key = FLAGS.job_mode
+  print("Running with key " + key)
   graph = model.Graph(utility, batch_size, utility.FLAGS.max_passes, mode=key)
   graph.create_graph(params, global_step)
   prev_dev_error = 0.0
@@ -292,19 +289,12 @@ def master(train_data, dev_data, utility):
       Train(graph, utility, batch_size, train_data, sess, model_dir,
             saver)
     elif (key == 'demo'):
-      model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
       #create all paramters of the model
-      param_class = parameters.Parameters(utility)
-      params, global_step, init = param_class.parameters(utility)
       
-      graph = model.Graph(utility, 1, utility.FLAGS.max_passes, mode=key)
-      graph.create_graph(params, global_step)
-      to_save = params.copy()
-      saver = tf.train.Saver(to_save, max_to_keep=500)
-      model_file = 'model_96500'
+      model_file = 'model_' + utility.FLAGS.model_id
       print("restoring: ", model_file)
-      saver.restore(sess, model_dir + "/" + model_file)
-      Demo(graph, utility, sess, model_dir, saver)
+      saver.restore(sess, model_dir + model_file)
+      Demo(graph, utility, sess, model_dir, dat)
 
       
 def main(args):
@@ -334,7 +324,7 @@ def main(args):
   print("# test examples ", len(test_data))
   print("running open source")
   #construct TF graph and train or evaluate
-  master(train_data, dev_data, utility)
+  master(train_data, dev_data, utility, dat)
   
       
 if __name__ == "__main__":
