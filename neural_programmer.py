@@ -51,12 +51,12 @@ tf.flags.DEFINE_float("learning_rate", 0.001, "")
 tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0,
                       "weighting factor in the objective function")
-tf.flags.DEFINE_string("job_id", "temp", """job id""")
+tf.flags.DEFINE_string("job_id", "_baseline", """job id""")
 tf.flags.DEFINE_string("output_dir", "model/embeddings/",
                        """output_dir""")
 tf.flags.DEFINE_string("data_dir", "data/",
                        """data_dir""")
-tf.flags.DEFINE_integer("write_every", 500, "wrtie every N")
+tf.flags.DEFINE_integer("write_every", 500, "write every N")
 tf.flags.DEFINE_integer("param_seed", 150, "")
 tf.flags.DEFINE_integer("python_seed", 200, "")
 tf.flags.DEFINE_float("dropout", 0.8, "dropout keep probability")
@@ -68,8 +68,8 @@ tf.flags.DEFINE_string("data_type", "double", "float or double")
 tf.flags.DEFINE_float("word_dropout_prob", 0.9, "word dropout keep prob")
 tf.flags.DEFINE_integer("word_cutoff", 10, "")
 tf.flags.DEFINE_integer("vocab_size", 10800, "")
-tf.flags.DEFINE_boolean("evaluator_job", False,
-                        "wehther to run as trainer/evaluator")
+tf.flags.DEFINE_string("job_mode", "train",
+                        "whether to run as trainer/evaluator/demo")
 tf.flags.DEFINE_float(
     "bad_number_pre_process", -200000.0,
     "number that is added to a corrupted table entry in a number column")
@@ -120,51 +120,8 @@ def evaluate(sess, data, batch_size, graph, i):
   print num_examples, len(data)
   print "--------"
 
-def evaluate_single(sess, data, batch_size, graph, i, utility):
-  #computes accuracy
-  text_file = open("output.txt", "w+")
-  for j in range(0, 1000):
-    answers = sess.run([graph.answers],
-                  feed_dict=data_utils.generate_feed_dict(data, j, 1, graph))
-    #print("Table:", data[j].table_key)
-    #print("Question:", data[j].utterance)
-    scalar_answer = answers[0][0][0]
-    lookup_answer = answers[0][1][0]
-    #print("Scalar output:", scalar_answer)
-    #print("Lookup output:")
-    to_write = "*******************************" + "\n"
-    to_write += "Table: " + data[j].table_key + '\n' + "Question: " + data[j].utterance + "\n" + "Scalar Output: " + str(scalar_answer) + "\n" + "Lookup output: " + "\n"
-    for col in range(len(lookup_answer)):
-      if not all(p == 0 for p in lookup_answer[col]):
-        if col < 15:
-          col_name = data[j].column_names[col]
-        else: 
-          col_name = data[j].word_column_names[col-15]
-        to_write += "Column name: " + str(col_name) + " Selection: " + str([i for i, e in enumerate(lookup_answer[col]) if e != 0]) + "\n"
-        #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
-    #print("---------------")
-    to_write += "- - - - - - - - - - - - - - - -" + "\n"
-    to_write += "Word lookup:" + str( data[j].is_word_lookup) + ", Number lookup:" + str(data[j].is_number_lookup) + ", Number calc:" + str(data[j].is_number_calc) + "\n"
-    to_write += "Scalar right answer: " + str(data[j].answer) + "\n" + "Lookup right answer:" + "\n"
-    #print("Word lookup:", data[j].is_word_lookup, ", Number lookup:", data[j].is_number_lookup, ", Number calc:", data[j].is_number_calc)
-    #print("Scalar right answer:", data[j].answer)
-    #print("Lookup right answer:")    
-    lookup_right_answer = np.transpose(data[j].lookup_matrix)[:]
-    for col in range(len(lookup_right_answer)):
-      if not all(p == 0 for p in lookup_right_answer[col]):
-        col_name = col 
-        to_write += "Column name: " + str(col_name) + ", Selection: " + str([i for i, e in enumerate(lookup_right_answer[col]) if e != 0]) + "\n"
-        #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_right_answer[col]) if e != 0])
-    to_write += "*******************************" + "\n"
-    text_file.write(to_write)
-    #text_file.close()
-    #print("**********")
-  print("dev set accuracy   after ", i, " : ", gc / num_examples)
-  print(num_examples, len(data))
-  print("--------")
 
 def get_prediction(sess, data, graph, utility):
-  #computes accuracy
   answers = sess.run([graph.answers],
                 feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
   scalar_answer = answers[0][0][0]
@@ -238,6 +195,46 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
       print(" printing train set loss: ", train_set_loss / utility.FLAGS.eval_cycle)
       train_set_loss = 0.0
 
+def Demo(graph, utility, sess, model_dir, saver):
+  i = 0
+  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  s.bind((config.socket_address, config.socket_port))
+  s.listen(1)
+  print("Listening to incoming questions...")
+  while (True):
+    conn, addr = s.accept()
+    data = conn.recv(1024).decode("utf-8").split("****----****")
+    table_key = data[0]
+    tokens = data[1]
+    question_id = 'iac-' + str(i)
+    print("Question:", tokens, "Table:", table_key)
+    example = dat.load_example(question_id, tokens, table_key)
+    data = [example] 
+    data_utils.construct_vocab(data, utility, True)
+    final_data = data_utils.complete_wiki_processing(data, utility, False)
+    answer = get_prediction(sess, final_data, graph, utility)
+    final_answer = ''
+    if answer[1] == 'scalar':
+      final_answer = str(answer[0])
+    else:
+      print(answer)
+      a = answer[0][0]
+      row = a[1][0]
+      col = a[2]
+      if col < 15:
+        list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+      else:
+        list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+      if type(list_answer) == float:
+        final_answer = str(list_answer)
+      else:
+        for l in list_answer:
+          final_answer += " " + str(l)
+    print("Answer:", final_answer)
+    i += 1
+    conn.send(final_answer.encode())
+    conn.close() 
+
 
 def master(train_data, dev_data, utility):
   #creates TF graph and calls trainer or evaluator
@@ -246,7 +243,7 @@ def master(train_data, dev_data, utility):
   #create all paramters of the model
   param_class = parameters.Parameters(utility)
   params, global_step, init = param_class.parameters(utility)
-  key = "test" if (FLAGS.evaluator_job) else "train"
+  key = FLAGS.job_mode
   graph = model.Graph(utility, batch_size, utility.FLAGS.max_passes, mode=key)
   graph.create_graph(params, global_step)
   prev_dev_error = 0.0
@@ -258,7 +255,7 @@ def master(train_data, dev_data, utility):
     sess.run(graph.init_op.name)
     to_save = params.copy()
     saver = tf.train.Saver(to_save, max_to_keep=500)
-    if (FLAGS.evaluator_job):
+    if (key == 'test'):
       while True:
         selected_models = {}
         file_list = tf.gfile.ListDirectory(model_dir)
@@ -283,7 +280,7 @@ def master(train_data, dev_data, utility):
               model_file.split("_")[len(model_file.split("_")) - 1])
           print "evaluating on dev ", model_file, model_step
           evaluate(sess, dev_data, batch_size, graph, model_step)
-    else:
+    elif (key == 'train'):
       ckpt = tf.train.get_checkpoint_state(model_dir)
       print "model dir: ", model_dir
       if (not (tf.gfile.IsDirectory(utility.FLAGS.output_dir))):
@@ -294,8 +291,22 @@ def master(train_data, dev_data, utility):
         tf.gfile.MkDir(model_dir)
       Train(graph, utility, batch_size, train_data, sess, model_dir,
             saver)
+    elif (key == 'demo'):
+      model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
+      #create all paramters of the model
+      param_class = parameters.Parameters(utility)
+      params, global_step, init = param_class.parameters(utility)
+      
+      graph = model.Graph(utility, 1, utility.FLAGS.max_passes, mode=key)
+      graph.create_graph(params, global_step)
+      to_save = params.copy()
+      saver = tf.train.Saver(to_save, max_to_keep=500)
+      model_file = 'model_96500'
+      print("restoring: ", model_file)
+      saver.restore(sess, model_dir + "/" + model_file)
+      Demo(graph, utility, sess, model_dir, saver)
 
-
+      
 def main(args):
   utility = Utility()
   train_name = "random-split-1-train.examples"
@@ -323,64 +334,8 @@ def main(args):
   print("# test examples ", len(test_data))
   print("running open source")
   #construct TF graph and train or evaluate
-  key = "test" if (FLAGS.evaluator_job) else "train"
-  if key == "train":
-    master(train_data, dev_data, utility)
-  else:
-    model_dir = utility.FLAGS.output_dir + "model" + utility.FLAGS.job_id
-    #create all paramters of the model
-    param_class = parameters.Parameters(utility)
-    params, global_step, init = param_class.parameters(utility)
-    
-    graph = model.Graph(utility, 1, utility.FLAGS.max_passes, mode=key)
-    graph.create_graph(params, global_step)
-    #start session
-    with tf.Session() as sess:
-      sess.run(init.name)
-      sess.run(graph.init_op.name)
-      to_save = params.copy()
-      saver = tf.train.Saver(to_save, max_to_keep=500)
-      model_file = 'model_96500'
-      print("restoring: ", model_file)
-      saver.restore(sess, model_dir + "/" + model_file)
-      i = 0
-      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      s.bind((config.socket_address, config.socket_port))
-      s.listen(1)
-      print("Listening to incoming questions...")
-      while (True):
-        conn, addr = s.accept()
-        data = conn.recv(1024).decode("utf-8").split("****----****")
-        table_key = data[0]
-        tokens = data[1]
-        question_id = 'iac-' + str(i)
-        print("Question:", tokens, "Table:", table_key)
-        example = dat.load_example(question_id, tokens, table_key)
-        data = [example] 
-        data_utils.construct_vocab(data, utility, True)
-        final_data = data_utils.complete_wiki_processing(data, utility, False)
-        answer = get_prediction(sess, final_data, graph, utility)
-        final_answer = ''
-        if answer[1] == 'scalar':
-          final_answer = str(answer[0])
-        else:
-          print(answer)
-          a = answer[0][0]
-          row = a[1][0]
-          col = a[2]
-          if col < 15:
-            list_answer = dat.annotated_tables[table_key].number_columns[col][row]
-          else:
-            list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
-          if type(list_answer) == float:
-            final_answer = str(list_answer)
-          else:
-            for l in list_answer:
-              final_answer += " " + str(l)
-        print("Answer:", final_answer)
-        i += 1
-        conn.send(final_answer.encode())
-        conn.close()
+  master(train_data, dev_data, utility)
+  
       
 if __name__ == "__main__":
   tf.app.run()
