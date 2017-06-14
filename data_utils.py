@@ -86,7 +86,7 @@ def word_lookup(word, utility):
     return utility.unk_token
 
 
-def convert_to_int_2d_and_pad(a, utility):
+def convert_to_int_2d_and_pad(a, utility, pad=True):
   ans = []
   lengths = []
   #print a
@@ -94,9 +94,10 @@ def convert_to_int_2d_and_pad(a, utility):
     temp = []
     if (len(b) > utility.FLAGS.max_entry_length):
       b = b[0:utility.FLAGS.max_entry_length]
-    for remaining in range(len(b), utility.FLAGS.max_entry_length):
-      b.append(utility.dummy_token)
-    assert len(b) == utility.FLAGS.max_entry_length
+    if (pad):
+      for remaining in range(len(b), utility.FLAGS.max_entry_length):
+        b.append(utility.dummy_token)
+      assert len(b) == utility.FLAGS.max_entry_length
     length = 0
     for word in b:
       if word != utility.dummy_token:
@@ -438,7 +439,7 @@ def complete_wiki_processing(data, utility, train=True):
           sorted_index = sorted_index + [utility.FLAGS.pad_int] * (
               utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_word_index.append(sorted_index)
-          column, _ = convert_to_int_2d_and_pad(column, utility)
+          column, _ = convert_to_int_2d_and_pad(column, utility, False)
           example.word_columns[start] = column + [[
               utility.word_ids[utility.dummy_token]
           ] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements -
