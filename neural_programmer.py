@@ -207,7 +207,7 @@ def Demo(graph, utility, sess, model_dir, dat):
     example = dat.load_example(question_id, tokens, table_key)
     data = [example] 
     data_utils.construct_vocab(data, utility, True)
-    final_data = data_utils.complete_wiki_processing(data, utility, False)
+    final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
     answer = get_prediction(sess, final_data, graph, utility)
     final_answer = ''
     if answer[1] == 'scalar':
@@ -315,8 +315,8 @@ def main(args):
   data_utils.add_special_words(utility)
   data_utils.perform_word_cutoff(utility)
   #convert data to int format and pad the inputs
-  train_data = data_utils.complete_wiki_processing(train_data, utility, True)
-  dev_data = data_utils.complete_wiki_processing(dev_data, utility, False)
+  train_data = data_utils.complete_wiki_processing(train_data, utility, 'train')
+  dev_data = data_utils.complete_wiki_processing(dev_data, utility, 'test')
 
   #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
   print("# train examples ", len(train_data))
