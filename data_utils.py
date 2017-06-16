@@ -101,7 +101,7 @@ def convert_to_int_2d_and_pad(a, utility, pad_length=None, pad=True):
     if (pad):
       dummy_token_id = utility.word_ids[word_lookup(utility.dummy_token, utility)]
       if len(b) == 0:
-        temp = [utility.dummy_token] * pad_length
+        temp = [dummy_token_id] * pad_length
         length = 1
       else:
         for remaining in range(len(temp), pad_length):
