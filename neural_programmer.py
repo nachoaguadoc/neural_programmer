@@ -304,7 +304,7 @@ def main(args):
   test_name = "pristine-unseen-tables.examples"
   #load data
   dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
-  train_data, dev_data, test_data = dat.load()
+  train_data, dev_data, test_data = dat.load(FLAGS.job_mode)
   utility.words = []
   utility.word_ids = {}
   utility.reverse_word_ids = {}

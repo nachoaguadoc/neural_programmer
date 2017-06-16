@@ -688,19 +688,21 @@ class WikiQuestionGenerator(object):
     example = self.answer_classification_test(question_id)
     return example
 
-  def load(self):
+  def load(self, mode):
     train_data = []
     dev_data = []
     test_data = []
-    self.load_annotated_data(
-        os.path.join(self.data_folder, "training.annotated"))
-    self.load_custom_data()
+    self.load_annotated_data(os.path.join(self.data_folder, "training.annotated"))
     self.load_annotated_tables()
-    self.load_custom_tables()
+
+    if (mode=='demo'):
+      self.load_custom_data()
+      self.load_custom_tables()
 
     self.answer_classification()
     self.train_loader.load()
     self.dev_loader.load()
+    
     for i in range(self.train_loader.num_questions()):
       example = self.train_loader.examples[i]
       example = self.annotated_examples[example]
