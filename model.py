@@ -59,16 +59,24 @@ class Graph():
     self.batch_word_column_names = tf.placeholder(tf.int32,[batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length])
     self.batch_word_column_name_mask = tf.placeholder(tf.float64,[batch_size, self.num_word_cols, self.utility.FLAGS.max_entry_length, self.utility.FLAGS.embedding_dims])
     self.batch_word_column_name_lengths = tf.placeholder(tf.float64, [batch_size, self.num_word_cols])
+    self.batch_word_column_descriptions = tf.placeholder(tf.int32,[batch_size, self.num_word_cols, self.utility.FLAGS.max_elements])
+    self.batch_word_column_description_mask = tf.placeholder(tf.float64,[batch_size, self.num_word_cols, self.utility.FLAGS.max_elements, self.utility.FLAGS.embedding_dims])
+    self.batch_word_column_description_lengths = tf.placeholder(tf.float64, [batch_size, self.num_word_cols])
     self.batch_word_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_word_cols])
 
     self.batch_number_column_names = tf.placeholder(tf.int32, [batch_size, self.num_cols, self.utility.FLAGS.max_entry_length])
     self.batch_number_column_name_mask = tf.placeholder(tf.float64,[batch_size, self.num_cols, self.utility.FLAGS.max_entry_length, self.utility.FLAGS.embedding_dims])
     self.batch_number_column_name_lengths = tf.placeholder(tf.float64, [batch_size, self.num_cols])
+    self.batch_number_column_descriptions = tf.placeholder(tf.int32,[batch_size, self.num_cols, self.utility.FLAGS.max_elements])
+    self.batch_number_column_description_mask = tf.placeholder(tf.float64,[batch_size, self.num_cols, self.utility.FLAGS.max_elements, self.utility.FLAGS.embedding_dims])
+    self.batch_number_column_description_lengths = tf.placeholder(tf.float64, [batch_size, self.num_cols])
+
     self.batch_number_column_mask = tf.placeholder(self.data_type, [batch_size, self.num_cols])
     
     #exact match and group by max operation
     self.batch_exact_match = tf.placeholder(self.data_type,[batch_size, self.num_cols + self.num_word_cols, max_elements])
     self.batch_column_exact_match = tf.placeholder(self.data_type, [batch_size, self.num_cols + self.num_word_cols])
+    self.batch_column_description_match = tf.placeholder(self.data_type, [batch_size, self.num_cols + self.num_word_cols])
     self.batch_group_by_max = tf.placeholder(self.data_type,[batch_size, self.num_cols + self.num_word_cols, max_elements])
     
     #numbers in the question along with their position. This is used to compute arguments to the comparison operations
@@ -187,17 +195,28 @@ class Graph():
   #computes embeddings for column names using parameters of question module
   def get_column_hidden_vectors(self):
     #vector representations for the column names
-    column_lengths = tf.reshape(self.batch_number_column_name_lengths, [self.batch_size, self.num_cols, 1])
+    number_column_lengths = tf.reshape(self.batch_number_column_name_lengths, [self.batch_size, self.num_cols, 1])
     word_column_lengths = tf.reshape(self.batch_word_column_name_lengths, [self.batch_size, self.num_word_cols, 1])
 
-    column_embeddings = nn_utils.get_embedding(self.batch_number_column_names, self.utility, self.params, self.batch_number_column_name_mask)
+    number_column_embeddings = nn_utils.get_embedding(self.batch_number_column_names, self.utility, self.params, self.batch_number_column_name_mask)
     word_column_embeddings = nn_utils.get_embedding(self.batch_word_column_names, self.utility, self.params, self.batch_word_column_name_mask)
-    
-    column_sum = tf.reduce_sum(column_embeddings, 2)
+
+
+    number_column_description_lengths = tf.reshape(self.batch_number_column_description_lengths, [self.batch_size, self.num_cols, 1])
+    word_column_description_lengths = tf.reshape(self.batch_word_column_description_lengths, [self.batch_size, self.num_word_cols, 1])
+
+    number_column_description_embeddings = nn_utils.get_embedding(self.batch_number_column_description, self.utility, self.params, self.batch_number_column_description_mask)
+    word_column_description_embeddings = nn_utils.get_embedding(self.batch_word_column_description, self.utility, self.params, self.batch_word_column_description_mask)
+
+
+    number_column_sum = tf.reduce_sum(number_column_embeddings, 2)
     word_column_sum = tf.reduce_sum(word_column_embeddings, 2)
 
-    self.column_hidden_vectors = tf.divide(column_sum, column_lengths)
-    self.word_column_hidden_vectors = tf.divide(word_column_sum, word_column_lengths)
+    number_column_description_sum = tf.reduce_sum(number_column_description_embeddings, 2)
+    word_column_description_sum = tf.reduce_sum(word_column_description_embeddings, 2)
+
+    self.column_hidden_vectors = tf.divide(number_column_sum, number_column_lengths) + tf.divide(number_column_description_sum, number_column_description_lengths)
+    self.word_column_hidden_vectors = tf.divide(word_column_sum, word_column_lengths) + tf.divide(word_column_description_sum, word_column_description_lengths)
 
   def create_summary_embeddings(self):
     #embeddings for each text entry in the table using parameters of the question module
@@ -221,10 +240,7 @@ class Graph():
     self.full_column_hidden_vectors += self.summary_text_entry_embeddings
     self.full_column_hidden_vectors = nn_utils.apply_dropout(
         self.full_column_hidden_vectors, self.utility.FLAGS.dropout, self.mode)
-    column_logits = tf.reduce_sum(
-        column_controller_vector * self.full_column_hidden_vectors, 2) + (
-            self.params["word_match_feature_column_name"] *
-            self.batch_column_exact_match) + self.full_column_mask
+    column_logits = tf.reduce_sum(column_controller_vector * self.full_column_hidden_vectors, 2) + (self.params["word_match_feature_column_name"] * self.batch_column_exact_match) + (self.params["word_match_feature_column_name"]* 0.5 * self.batch_column_description_match) + self.full_column_mask
     column_softmax = tf.nn.softmax(column_logits)  #batch_size * max_cols
     return column_softmax
 

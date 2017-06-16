@@ -86,18 +86,18 @@ def word_lookup(word, utility):
     return utility.unk_token
 
 
-def convert_to_int_2d_and_pad(a, utility, pad=True):
+def convert_to_int_2d_and_pad(a, utility, pad_length=None, pad=True):
   ans = []
   lengths = []
   #print a
   for b in a:
     temp = []
-    if (len(b) > utility.FLAGS.max_entry_length):
-      b = b[0:utility.FLAGS.max_entry_length]
+    if (len(b) > pad_length):
+      b = b[0:pad_length]
     if (pad):
-      for remaining in range(len(b), utility.FLAGS.max_entry_length):
+      for remaining in range(len(b), pad_length):
         b.append(utility.dummy_token)
-      assert len(b) == utility.FLAGS.max_entry_length
+      assert len(b) == pad_length
     length = 0
     for word in b:
       if word != utility.dummy_token:
@@ -188,6 +188,18 @@ def partial_column_match(question, table, number):
         answer[i] = 1.0
   return answer
 
+def partial_column_description_match(question, table, demo):
+  answer = []
+  add_token = False
+  for i in range(len(table)):
+    answer.append(0)
+  if (demo):
+    for i in range(len(table)):
+      for word in question:
+        if (word in table[i]):
+          answer[i] += 1.0
+          add_token = True
+  return answer, add_token
 
 def exact_column_match(question, table, number):
   #performs exact match on column names
@@ -302,10 +314,18 @@ def complete_wiki_processing(data, utility, key='train'):
         example.word_column_exact_match = partial_column_match(example.string_question, example.original_wc_names, number=False)
         example.number_column_exact_match = partial_column_match(example.string_question, example.original_nc_names, number=False)
       
+      if (key=='demo'):
+        example.word_column_description_match, word_token = partial_column_description_match(example.string_question, example.word_column_descriptions, demo=True)
+        example.number_column_description_match, col_token = partial_column_description_match(example.string_question, example.number_column_descriptions, demo=True)
+      else:
+        example.word_column_description_match, word_token = partial_column_description_match(example.string_question, example.original_wc_names, demo=False)
+        example.number_column_description_match, col_token = partial_column_description_match(example.string_question, example.original_nc_names, demo=False)
+      add_token = word_token or col_token
+
       if (len(word_match) > 0 or len(number_match) > 0):
         example.question.append(utility.entry_match_token)
       
-      if (1.0 in example.word_column_exact_match or 1.0 in example.number_column_exact_match):
+      if (1.0 in example.word_column_exact_match or 1.0 in example.number_column_exact_match or add_token):
         example.question.append(utility.column_match_token)
      
       example.string_question = example.question[:]
@@ -316,7 +336,7 @@ def complete_wiki_processing(data, utility, key='train'):
       example.word_columns = example.word_columns[:]
       example.len_total_cols = len(example.word_column_names) + len(example.number_column_names)
 
-      example.column_names = example.number_column_names[:]
+      example.number_column_names = example.number_column_names[:]
       example.word_column_names = example.word_column_names[:]
       example.string_column_names = example.number_column_names[:]
       example.string_word_column_names = example.word_column_names[:]
@@ -409,7 +429,9 @@ def complete_wiki_processing(data, utility, key='train'):
           example.column_mask.append(-100000000.0)
           example.processed_column_mask.append(-100000000.0)
           example.number_column_exact_match.append(0.0)
-          example.column_names.append([utility.dummy_token])
+          example.number_column_description_match.append(0.0)
+          example.number_column_names.append([utility.dummy_token] * utility.FLAGS.max_entry_length)
+          example.number_column_descriptions.append([utility.dummy_token] * utility.FLAGS.max_elements)
 
         #word column  and related-padding
         start = 0
@@ -424,7 +446,7 @@ def complete_wiki_processing(data, utility, key='train'):
           sorted_index = sorted_index + [utility.FLAGS.pad_int] * (
               utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_word_index.append(sorted_index)
-          column, _ = convert_to_int_2d_and_pad(column, utility, False)
+          column, _ = convert_to_int_2d_and_pad(column, utility, utility.FLAGS.max_entry_length, False)
           example.word_columns[start] = column + [[utility.word_ids[utility.dummy_token]] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements - len(column))
           example.processed_word_columns[start] += [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(example.processed_word_columns[start]))
           example.word_column_entry_mask.append([0] * len(column) + [utility.word_ids[utility.dummy_token]] * (utility.FLAGS.max_elements - len(column)))
@@ -441,49 +463,72 @@ def complete_wiki_processing(data, utility, key='train'):
           example.word_column_mask.append(-100000000.0)
           example.processed_word_column_mask.append(-100000000.0)
           example.word_column_exact_match.append(0.0)
+          example.word_column_description_match.append(0.0)
           example.word_column_names.append([utility.dummy_token] * utility.FLAGS.max_entry_length)
+          example.word_column_descriptions.append([utility.dummy_token] * utility.FLAGS.max_elements)
 
         seen_tables[example.table_key] = 1
       #convert column and word column names to integers
       true_mask = [1.] * utility.FLAGS.embedding_dims
       false_mask = [0.] * utility.FLAGS.embedding_dims
 
-      example.column_ids, example.column_name_lengths = convert_to_int_2d_and_pad(example.column_names, utility)
-      example.column_name_mask = []
-      for ci in example.column_ids:
+      example.number_column_ids, example.number_column_name_lengths = convert_to_int_2d_and_pad(example.number_column_names, utility, utility.FLAGS.max_entry_length, True)
+      example.number_column_description_ids, example.number_column_description_lengths = convert_to_int_2d_and_pad(example.number_column_descriptions, utility, utility.FLAGS.max_elements, True)
+
+      example.number_column_name_mask = []
+      for ci in example.number_column_ids:
         temp_mask = []
         for id_ in ci:
-          if id_== utility.dummy_token_id:
+          if id_== utility.dummy_token_id or id_==utility.unk_token:
             temp_mask.append(false_mask)
           else:
             temp_mask.append(true_mask)
-        example.column_name_mask.append(temp_mask)
+        example.number_column_name_mask.append(temp_mask)
 
-      example.word_column_ids, example.word_column_name_lengths = convert_to_int_2d_and_pad(example.word_column_names, utility)
+      example.number_column_description_mask = []
+      for ci in example.number_column_description_ids:
+        temp_mask = []
+        for id_ in ci:
+          if id_== utility.dummy_token_id or id_==utility.unk_token:
+            temp_mask.append(false_mask)
+          else:
+            temp_mask.append(true_mask)
+        example.number_column_description_mask.append(temp_mask)
+
+      example.word_column_ids, example.word_column_name_lengths = convert_to_int_2d_and_pad(example.word_column_names, utility, utility.FLAGS.max_entry_length, True)
+      example.word_column_description_ids, example.word_column_description_lengths = convert_to_int_2d_and_pad(example.word_column_descriptions, utility, utility.FLAGS.max_elements, True)
+
       example.word_column_name_mask = []
       for ci in example.word_column_ids:
         temp_mask = []
         for id_ in ci:
-          if id_== utility.dummy_token_id:
+          if id_== utility.dummy_token_id or id_==utility.unk_token:
             temp_mask.append(false_mask)
           else:
             temp_mask.append(true_mask)
         example.word_column_name_mask.append(temp_mask)
 
+      example.word_column_description_mask = []
+      for ci in example.word_column_description_ids:
+        temp_mask = []
+        for id_ in ci:
+          if id_== utility.dummy_token_id or id_==utility.unk_token:
+            temp_mask.append(false_mask)
+          else:
+            temp_mask.append(true_mask)
+        example.word_column_description_mask.append(temp_mask)
+
       for i_em in range(len(example.number_exact_match)):
-        example.number_exact_match[i_em] = example.number_exact_match[
-            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.number_exact_match[i_em]))
-        example.number_group_by_max[i_em] = example.number_group_by_max[
-            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.number_group_by_max[i_em]))
+        example.number_exact_match[i_em] = example.number_exact_match[i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.number_exact_match[i_em]))
+        example.number_group_by_max[i_em] = example.number_group_by_max[i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.number_group_by_max[i_em]))
       for i_em in range(len(example.word_exact_match)):
-        example.word_exact_match[i_em] = example.word_exact_match[
-            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.word_exact_match[i_em]))
-        example.word_group_by_max[i_em] = example.word_group_by_max[
-            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.word_group_by_max[i_em]))
+        example.word_exact_match[i_em] = example.word_exact_match[i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.word_exact_match[i_em]))
+        example.word_group_by_max[i_em] = example.word_group_by_max[i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.word_group_by_max[i_em]))
+
       example.exact_match = example.number_exact_match + example.word_exact_match
       example.group_by_max = example.number_group_by_max + example.word_group_by_max
       example.exact_column_match = example.number_column_exact_match + example.word_column_exact_match
-
+      example.exact_column_description_match = example.number_column_description_match + example.word_column_description_match
       #answer and related mask, padding
       if (train and example.is_lookup):
         example.answer = example.calc_answer
@@ -529,27 +574,21 @@ def complete_wiki_processing(data, utility, key='train'):
 def add_special_words(utility):
   utility.words.append(utility.entry_match_token)
   utility.word_ids[utility.entry_match_token] = len(utility.word_ids)
-  utility.reverse_word_ids[utility.word_ids[
-      utility.entry_match_token]] = utility.entry_match_token
+  utility.reverse_word_ids[utility.word_ids[utility.entry_match_token]] = utility.entry_match_token
   utility.entry_match_token_id = utility.word_ids[utility.entry_match_token]
-  print "entry match token: ", utility.word_ids[
-      utility.entry_match_token], utility.entry_match_token_id
+  print "entry match token: ", utility.word_ids[utility.entry_match_token], utility.entry_match_token_id
   utility.words.append(utility.column_match_token)
   utility.word_ids[utility.column_match_token] = len(utility.word_ids)
-  utility.reverse_word_ids[utility.word_ids[
-      utility.column_match_token]] = utility.column_match_token
+  utility.reverse_word_ids[utility.word_ids[utility.column_match_token]] = utility.column_match_token
   utility.column_match_token_id = utility.word_ids[utility.column_match_token]
-  print "entry match token: ", utility.word_ids[
-      utility.column_match_token], utility.column_match_token_id
+  print "entry match token: ", utility.word_ids[utility.column_match_token], utility.column_match_token_id
   utility.words.append(utility.dummy_token)
   utility.word_ids[utility.dummy_token] = len(utility.word_ids)
-  utility.reverse_word_ids[utility.word_ids[
-      utility.dummy_token]] = utility.dummy_token
+  utility.reverse_word_ids[utility.word_ids[utility.dummy_token]] = utility.dummy_token
   utility.dummy_token_id = utility.word_ids[utility.dummy_token]
   utility.words.append(utility.unk_token)
   utility.word_ids[utility.unk_token] = len(utility.word_ids)
-  utility.reverse_word_ids[utility.word_ids[
-      utility.unk_token]] = utility.unk_token
+  utility.reverse_word_ids[utility.word_ids[utility.unk_token]] = utility.unk_token
 
 
 def perform_word_cutoff(utility):
@@ -584,89 +623,51 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
   for j in range(batch_size):
     feed_examples.append(data[curr + j])
   if (train):
-    feed_dict[gr.batch_question] = [
-        word_dropout(feed_examples[j].question, utility)
-        for j in range(batch_size)
-    ]
+    feed_dict[gr.batch_question] = [word_dropout(feed_examples[j].question, utility)for j in range(batch_size)]
   else:
-    feed_dict[gr.batch_question] = [
-        feed_examples[j].question for j in range(batch_size)
-    ]
-  feed_dict[gr.batch_question_attention_mask] = [
-      feed_examples[j].question_attention_mask for j in range(batch_size)
-  ]
-  feed_dict[
-      gr.batch_answer] = [feed_examples[j].answer for j in range(batch_size)]
-  feed_dict[gr.batch_number_column] = [
-      feed_examples[j].columns for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_processed_number_column] = [
-      feed_examples[j].processed_number_columns for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_processed_sorted_index_number_column] = [
-      feed_examples[j].sorted_number_index for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_processed_sorted_index_word_column] = [
-      feed_examples[j].sorted_word_index for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_question_number] = np.array(
-      [feed_examples[j].question_number for j in range(batch_size)]).reshape(
-          (batch_size, 1))
-  feed_dict[gr.batch_question_number_one] = np.array(
-      [feed_examples[j].question_number_1 for j in range(batch_size)]).reshape(
-          (batch_size, 1))
-  feed_dict[gr.batch_question_number_mask] = [
-      feed_examples[j].question_number_mask for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_question_number_one_mask] = np.array(
-      [feed_examples[j].question_number_one_mask for j in range(batch_size)
-      ]).reshape((batch_size, 1))
-  feed_dict[gr.batch_print_answer] = [
-      feed_examples[j].print_answer for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_exact_match] = [
-      feed_examples[j].exact_match for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_group_by_max] = [
-      feed_examples[j].group_by_max for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_column_exact_match] = [
-      feed_examples[j].exact_column_match for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_ordinal_question] = [
-      feed_examples[j].ordinal_question for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_ordinal_question_one] = [
-      feed_examples[j].ordinal_question_one for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_number_column_mask] = [
-      feed_examples[j].column_mask for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_number_column_names] = [
-      feed_examples[j].column_ids for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_number_column_name_mask] = [
-      feed_examples[j].column_name_mask for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_number_column_name_lengths] = [
-      feed_examples[j].column_name_lengths for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_processed_word_column] = [
-      feed_examples[j].processed_word_columns for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_word_column_mask] = [
-      feed_examples[j].word_column_mask for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_word_column_names] = [
-      feed_examples[j].word_column_ids for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_word_column_name_mask] = [
-      feed_examples[j].word_column_name_mask for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_word_column_name_lengths] = [
-      feed_examples[j].word_column_name_lengths for j in range(batch_size)
-  ]
-  feed_dict[gr.batch_word_column_entry_mask] = [
-      feed_examples[j].word_column_entry_mask for j in range(batch_size)
-  ]
+    feed_dict[gr.batch_question] = [feed_examples[j].question for j in range(batch_size)]
+
+  feed_dict[gr.batch_question_attention_mask] = [feed_examples[j].question_attention_mask for j in range(batch_size)]
+
+  feed_dict[gr.batch_answer] = [feed_examples[j].answer for j in range(batch_size)]
+  feed_dict[gr.batch_number_column] = [feed_examples[j].columns for j in range(batch_size)]
+
+  feed_dict[gr.batch_processed_number_column] = [feed_examples[j].processed_number_columns for j in range(batch_size)]
+  feed_dict[gr.batch_processed_sorted_index_number_column] = [feed_examples[j].sorted_number_index for j in range(batch_size)]
+  feed_dict[gr.batch_processed_sorted_index_word_column] = [feed_examples[j].sorted_word_index for j in range(batch_size)]
+
+  feed_dict[gr.batch_question_number] = np.array([feed_examples[j].question_number for j in range(batch_size)]).reshape((batch_size, 1))
+  feed_dict[gr.batch_question_number_one] = np.array([feed_examples[j].question_number_1 for j in range(batch_size)]).reshape((batch_size, 1))
+  feed_dict[gr.batch_question_number_mask] = [feed_examples[j].question_number_mask for j in range(batch_size)]
+  feed_dict[gr.batch_question_number_one_mask] = np.array([feed_examples[j].question_number_one_mask for j in range(batch_size)]).reshape((batch_size, 1))
+
+  feed_dict[gr.batch_print_answer] = [feed_examples[j].print_answer for j in range(batch_size)]
+  feed_dict[gr.batch_exact_match] = [feed_examples[j].exact_match for j in range(batch_size)]
+  feed_dict[gr.batch_group_by_max] = [feed_examples[j].group_by_max for j in range(batch_size)]
+
+  feed_dict[gr.batch_column_exact_match] = [feed_examples[j].exact_column_match for j in range(batch_size)]
+  feed_dict[gr.batch_column_description_match] = [feed_examples[j].exact_column_description_match for j in range(batch_size)]
+
+  feed_dict[gr.batch_ordinal_question] = [feed_examples[j].ordinal_question for j in range(batch_size)]
+  feed_dict[gr.batch_ordinal_question_one] = [feed_examples[j].ordinal_question_one for j in range(batch_size)]
+
+  feed_dict[gr.batch_number_column_mask] = [feed_examples[j].number_column_mask for j in range(batch_size)]
+  feed_dict[gr.batch_number_column_names] = [feed_examples[j].number_column_ids for j in range(batch_size)]
+  feed_dict[gr.batch_number_column_name_mask] = [feed_examples[j].number_column_name_mask for j in range(batch_size)]
+  feed_dict[gr.batch_number_column_name_lengths] = [feed_examples[j].number_column_name_lengths for j in range(batch_size)]
+  feed_dict[gr.batch_number_column_descriptions] = [feed_examples[j].number_column_description_ids for j in range(batch_size)]
+  feed_dict[gr.batch_number_column_description_mask] = [feed_examples[j].number_column_description_mask for j in range(batch_size)]
+  feed_dict[gr.batch_number_column_description_lengths] = [feed_examples[j].number_column_description_lengths for j in range(batch_size)]
+
+  feed_dict[gr.batch_processed_word_column] = [feed_examples[j].processed_word_columns for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_mask] = [feed_examples[j].word_column_mask for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_names] = [feed_examples[j].word_column_ids for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_name_mask] = [feed_examples[j].word_column_name_mask for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_name_lengths] = [feed_examples[j].word_column_name_lengths for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_descriptions] = [feed_examples[j].word_column_description_ids for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_description_lengths] = [feed_examples[j].word_column_description_lengths for j in range(batch_size)]
+  feed_dict[gr.batch_word_column_description_mask] = [feed_examples[j].word_column_description_mask for j in range(batch_size)]
+
+  feed_dict[gr.batch_word_column_entry_mask] = [feed_examples[j].word_column_entry_mask for j in range(batch_size)]
+
   return feed_dict
