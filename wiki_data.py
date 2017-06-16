@@ -311,7 +311,6 @@ class WikiQuestionGenerator(object):
     self.custom_tables = {}
     self.custom_tables['csv/204-csv/custom-1.csv'] = []
     print "Custom examples loaded ", len(self.annotated_examples)
-    f.close()
 
   def load_test_data(self, question_id, input, context):
     more_words = ['greater', 'more', 'bigger']
@@ -394,12 +393,17 @@ class WikiQuestionGenerator(object):
       f = tf.gfile.GFile(os.path.join(self.root_folder, annotated_table), "r")
       counter = 0
       column_names = []
+      column_descriptions = []
+
       for line in f:
         if (counter > 0):
           line = line.strip()
           line = line + "\t" * (13 - len(line.split("\t")))
           (row, col, read_id, content, tokens, lemma_tokens, pos_tags, ner_tags,
            ner_values, number, date, num2, read_list) = line.split("\t")
+
+          column_descriptions.append([])
+
           entry = self.pre_process_sentence(tokens, ner_tags, ner_values)
           if (row == "-1"):
             column_names.append(entry)
@@ -429,15 +433,20 @@ class WikiQuestionGenerator(object):
       word_columns = []
       processed_word_columns = []
       word_column_names = []
+      word_column_descriptions = []
+
       word_column_indices = []
       number_columns = []
       processed_number_columns = []
       number_column_names = []
+      number_column_descriptions = []
+
       number_column_indices = []
       for i in range(max_col + 1):
         if (self.is_number_column(orig_columns[i])):
           number_column_indices.append(i)
           number_column_names.append(column_names[i])
+          number_column_descriptions.append(column_descriptions[i])
           temp = []
           for w in orig_columns[i]:
             if (is_number(w[0])):
@@ -447,11 +456,12 @@ class WikiQuestionGenerator(object):
         else:
           word_column_indices.append(i)
           word_column_names.append(column_names[i])
+          word_column_descriptions.append(column_descriptions[i])
           word_columns.append(orig_columns[i])
           processed_word_columns.append(processed_columns[i])
       table_info = TableInfo(
-          word_columns, word_column_names, word_column_indices, number_columns,
-          number_column_names, number_column_indices, processed_word_columns,
+          word_columns, word_column_names, word_column_descriptions, word_column_indices, number_columns,
+          number_column_names, number_column_descriptions, number_column_indices, processed_word_columns,
           processed_number_columns, orig_columns)
       self.annotated_tables[table] = table_info
       f.close()
@@ -551,6 +561,7 @@ class WikiQuestionGenerator(object):
           processed_number_columns, orig_columns)
       self.custom_tables[table] = table_info
       f.close()
+
   def answer_classification(self):
     lookup_questions = 0
     number_lookup_questions = 0
