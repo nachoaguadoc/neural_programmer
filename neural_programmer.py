@@ -29,53 +29,43 @@ import data_utils
 import socket 
 import config
 tf.flags.DEFINE_integer("train_steps", 100001, "Number of steps to train")
-tf.flags.DEFINE_integer("eval_cycle", 500,
-                        "Evaluate model at every eval_cycle steps")
-tf.flags.DEFINE_integer("max_elements", 100,
-                        "maximum rows that are  considered for processing")
-tf.flags.DEFINE_integer(
-    "max_number_cols", 15,
-    "maximum number columns that are considered for processing")
-tf.flags.DEFINE_integer(
-    "max_word_cols", 25,
-    "maximum number columns that are considered for processing")
+tf.flags.DEFINE_integer("eval_cycle", 500, "Evaluate model at every eval_cycle steps")
+tf.flags.DEFINE_integer("max_elements", 100, "maximum rows that are  considered for processing")
+tf.flags.DEFINE_integer("max_description", 100, "maximum words that are  considered for processing the description")
+tf.flags.DEFINE_integer("max_number_cols", 15, "maximum number columns that are considered for processing")
+tf.flags.DEFINE_integer("max_word_cols", 25, "maximum number columns that are considered for processing")
 tf.flags.DEFINE_integer("question_length", 62, "maximum question length")
 tf.flags.DEFINE_integer("max_entry_length", 3, "")
 tf.flags.DEFINE_integer("max_passes", 2, "number of operation passes")
 tf.flags.DEFINE_integer("embedding_dims", 256, "")
 tf.flags.DEFINE_integer("batch_size", 1, "")
+
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
 tf.flags.DEFINE_float("eps", 1e-6, "")
 tf.flags.DEFINE_float("param_init", 0.1, "")
 tf.flags.DEFINE_float("learning_rate", 0.001, "")
 tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
-tf.flags.DEFINE_float("print_cost", 50.0,
-                      "weighting factor in the objective function")
+tf.flags.DEFINE_float("print_cost", 50.0, "weighting factor in the objective function")
+
 tf.flags.DEFINE_string("job_id", "_baseline", """job id""")
-tf.flags.DEFINE_string("output_dir", "model/embeddings/",
-                       """output_dir""")
+tf.flags.DEFINE_string("output_dir", "model/embeddings/", """output_dir""")
 tf.flags.DEFINE_string("model_id", "96500", """model id""")
-tf.flags.DEFINE_string("data_dir", "data/",
-                       """data_dir""")
+tf.flags.DEFINE_string("data_dir", "data/", """data_dir""")
+
 tf.flags.DEFINE_integer("write_every", 500, "write every N")
 tf.flags.DEFINE_integer("param_seed", 150, "")
 tf.flags.DEFINE_integer("python_seed", 200, "")
+
 tf.flags.DEFINE_float("dropout", 0.8, "dropout keep probability")
-tf.flags.DEFINE_float("rnn_dropout", 0.9,
-                      "dropout keep probability for rnn connections")
-tf.flags.DEFINE_float("pad_int", -20000.0,
-                      "number columns are padded with pad_int")
+tf.flags.DEFINE_float("rnn_dropout", 0.9, "dropout keep probability for rnn connections")
+tf.flags.DEFINE_float("pad_int", -20000.0, "number columns are padded with pad_int")
 tf.flags.DEFINE_string("data_type", "double", "float or double")
 tf.flags.DEFINE_float("word_dropout_prob", 0.9, "word dropout keep prob")
 tf.flags.DEFINE_integer("word_cutoff", 10, "")
 tf.flags.DEFINE_integer("vocab_size", 10800, "")
-tf.flags.DEFINE_string("job_mode", "train",
-                        "whether to run as trainer/evaluator/demo")
-tf.flags.DEFINE_float(
-    "bad_number_pre_process", -200000.0,
-    "number that is added to a corrupted table entry in a number column")
-tf.flags.DEFINE_float("max_math_error", 3.0,
-                      "max square loss error that is considered")
+tf.flags.DEFINE_string("job_mode", "train", "whether to run as trainer/evaluator/demo")
+tf.flags.DEFINE_float("bad_number_pre_process", -200000.0, "number that is added to a corrupted table entry in a number column")
+tf.flags.DEFINE_float("max_math_error", 3.0, "max square loss error that is considered")
 tf.flags.DEFINE_float("soft_min_value", 5.0, "")
 FLAGS = tf.flags.FLAGS
 
@@ -290,7 +280,6 @@ def master(train_data, dev_data, utility, dat):
             saver)
     elif (key == 'demo'):
       #create all paramters of the model
-      
       model_file = 'model_' + utility.FLAGS.model_id
       print("restoring: ", model_file)
       saver.restore(sess, model_dir + model_file)

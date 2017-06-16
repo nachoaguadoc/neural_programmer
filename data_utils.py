@@ -94,20 +94,21 @@ def convert_to_int_2d_and_pad(a, utility, pad_length=None, pad=True):
     temp = []
     if (len(b) > pad_length):
       b = b[0:pad_length]
-    if (pad):
-      for remaining in range(len(b), pad_length):
-        b.append(utility.dummy_token)
-      assert len(b) == pad_length
-    length = 0
     for word in b:
-      if word != utility.dummy_token:
-        length += 1
       temp.append(utility.word_ids[word_lookup(word, utility)])
-    ans.append(temp)
-    if length == 0:
-      length = 1
+    length = len(b)
+    if (pad):
+      dummy_token_id = utility.word_ids[word_lookup(utility.dummy_token, utility)]
+      if len(b) == 0:
+        temp = [utility.dummy_token] * pad_length
+        length = 1
+      else:
+        for remaining in range(len(temp), pad_length):
+          temp.append(dummy_token_id)
+      assert len(b) == pad_length
     lengths.append(length)
-  #print ans
+    ans.append(temp)
+
   return ans, lengths
 
 
@@ -431,7 +432,7 @@ def complete_wiki_processing(data, utility, key='train'):
           example.number_column_exact_match.append(0.0)
           example.number_column_description_match.append(0.0)
           example.number_column_names.append([utility.dummy_token] * utility.FLAGS.max_entry_length)
-          example.number_column_descriptions.append([utility.dummy_token] * utility.FLAGS.max_elements)
+          example.number_column_descriptions.append([utility.dummy_token] * utility.FLAGS.max_description)
 
         #word column  and related-padding
         start = 0
@@ -465,7 +466,7 @@ def complete_wiki_processing(data, utility, key='train'):
           example.word_column_exact_match.append(0.0)
           example.word_column_description_match.append(0.0)
           example.word_column_names.append([utility.dummy_token] * utility.FLAGS.max_entry_length)
-          example.word_column_descriptions.append([utility.dummy_token] * utility.FLAGS.max_elements)
+          example.word_column_descriptions.append([utility.dummy_token] * utility.FLAGS.max_description)
 
         seen_tables[example.table_key] = 1
       #convert column and word column names to integers
@@ -473,7 +474,7 @@ def complete_wiki_processing(data, utility, key='train'):
       false_mask = [0.] * utility.FLAGS.embedding_dims
 
       example.number_column_ids, example.number_column_name_lengths = convert_to_int_2d_and_pad(example.number_column_names, utility, utility.FLAGS.max_entry_length, True)
-      example.number_column_description_ids, example.number_column_description_lengths = convert_to_int_2d_and_pad(example.number_column_descriptions, utility, utility.FLAGS.max_elements, True)
+      example.number_column_description_ids, example.number_column_description_lengths = convert_to_int_2d_and_pad(example.number_column_descriptions, utility, utility.FLAGS.max_description, True)
 
       example.number_column_name_mask = []
       for ci in example.number_column_ids:
@@ -496,7 +497,7 @@ def complete_wiki_processing(data, utility, key='train'):
         example.number_column_description_mask.append(temp_mask)
 
       example.word_column_ids, example.word_column_name_lengths = convert_to_int_2d_and_pad(example.word_column_names, utility, utility.FLAGS.max_entry_length, True)
-      example.word_column_description_ids, example.word_column_description_lengths = convert_to_int_2d_and_pad(example.word_column_descriptions, utility, utility.FLAGS.max_elements, True)
+      example.word_column_description_ids, example.word_column_description_lengths = convert_to_int_2d_and_pad(example.word_column_descriptions, utility, utility.FLAGS.max_description, True)
 
       example.word_column_name_mask = []
       for ci in example.word_column_ids:
