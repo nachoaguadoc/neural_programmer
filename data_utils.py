@@ -419,7 +419,7 @@ def complete_wiki_processing(data, utility, key='train'):
           example.number_columns[start] = column + [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(column))
           example.processed_number_columns[start] += [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(example.processed_number_columns[start]))
           start += 1
-          example.column_mask.append(0.0)
+          example.number_column_mask.append(0.0)
 
         for remaining in range(num_cols, utility.FLAGS.max_number_cols):
           example.sorted_number_index.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
@@ -427,7 +427,7 @@ def complete_wiki_processing(data, utility, key='train'):
           example.processed_number_columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
           example.number_exact_match.append([0.0] * (utility.FLAGS.max_elements))
           example.number_group_by_max.append([0.0] * (utility.FLAGS.max_elements))
-          example.column_mask.append(-100000000.0)
+          example.number_column_mask.append(-100000000.0)
           example.processed_column_mask.append(-100000000.0)
           example.number_column_exact_match.append(0.0)
           example.number_column_description_match.append(0.0)
