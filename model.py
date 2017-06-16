@@ -205,8 +205,8 @@ class Graph():
     number_column_description_lengths = tf.reshape(self.batch_number_column_description_lengths, [self.batch_size, self.num_cols, 1])
     word_column_description_lengths = tf.reshape(self.batch_word_column_description_lengths, [self.batch_size, self.num_word_cols, 1])
 
-    number_column_description_embeddings = nn_utils.get_embedding(self.batch_number_column_description, self.utility, self.params, self.batch_number_column_description_mask)
-    word_column_description_embeddings = nn_utils.get_embedding(self.batch_word_column_description, self.utility, self.params, self.batch_word_column_description_mask)
+    number_column_description_embeddings = nn_utils.get_embedding(self.batch_number_column_descriptions, self.utility, self.params, self.batch_number_column_description_mask)
+    word_column_description_embeddings = nn_utils.get_embedding(self.batch_word_column_descriptions, self.utility, self.params, self.batch_word_column_description_mask)
 
 
     number_column_sum = tf.reduce_sum(number_column_embeddings, 2)

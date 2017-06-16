@@ -105,7 +105,7 @@ def convert_to_int_2d_and_pad(a, utility, pad_length=None, pad=True):
       else:
         for remaining in range(len(temp), pad_length):
           temp.append(dummy_token_id)
-      assert len(b) == pad_length
+      assert len(temp) == pad_length
     lengths.append(length)
     ans.append(temp)
 
