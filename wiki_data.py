@@ -649,11 +649,14 @@ class WikiQuestionGenerator(object):
       example.word_columns = table_info.word_columns
       example.number_columns = table_info.number_columns
       example.word_column_names = table_info.word_column_names
+      example.word_column_descriptions = table_info.word_column_descriptions
+
       example.processed_number_columns = table_info.processed_number_columns
       example.processed_word_columns = table_info.processed_word_columns
       example.number_column_names = table_info.number_column_names
-      example.number_lookup_matrix = example.lookup_matrix[:,
-                                                           number_column_indices]
+      example.number_column_descriptions = table_info.number_column_descriptions
+
+      example.number_lookup_matrix = example.lookup_matrix[:, number_column_indices]
       example.word_lookup_matrix = example.lookup_matrix[:, word_column_indices]
 
   def answer_classification_test(self, q_id):
@@ -678,8 +681,7 @@ class WikiQuestionGenerator(object):
     example.number_column_names = table_info.number_column_names
     example.number_column_descriptions = table_info.number_column_descriptions
 
-    example.number_lookup_matrix = example.lookup_matrix[:,
-                                                         number_column_indices]
+    example.number_lookup_matrix = example.lookup_matrix[:, number_column_indices]
     example.word_lookup_matrix = example.lookup_matrix[:, word_column_indices]
     return example
 
@@ -702,7 +704,7 @@ class WikiQuestionGenerator(object):
     self.answer_classification()
     self.train_loader.load()
     self.dev_loader.load()
-    
+
     for i in range(self.train_loader.num_questions()):
       example = self.train_loader.examples[i]
       example = self.annotated_examples[example]
