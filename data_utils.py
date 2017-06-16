@@ -333,7 +333,7 @@ def complete_wiki_processing(data, utility, key='train'):
       example.number_lookup_matrix = np.transpose(example.number_lookup_matrix)[:]
       example.word_lookup_matrix = np.transpose(example.word_lookup_matrix)[:]
 
-      example.columns = example.number_columns[:]
+      example.number_columns = example.number_columns[:]
       example.word_columns = example.word_columns[:]
       example.len_total_cols = len(example.word_column_names) + len(example.number_column_names)
 
@@ -344,7 +344,7 @@ def complete_wiki_processing(data, utility, key='train'):
 
       example.sorted_number_index = []
       example.sorted_word_index = []
-      example.column_mask = []
+      example.number_column_mask = []
       example.word_column_mask = []
       example.processed_column_mask = []
       example.processed_word_column_mask = []
@@ -404,7 +404,7 @@ def complete_wiki_processing(data, utility, key='train'):
 
       if (True):
         #number columns and related-padding
-        num_cols = len(example.columns)
+        num_cols = len(example.number_columns)
         start = 0
         for column in example.number_columns:
           if (check_processed_cols(example.processed_number_columns[start],utility)):
@@ -416,14 +416,14 @@ def complete_wiki_processing(data, utility, key='train'):
 
           sorted_index = sorted_index + [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_number_index.append(sorted_index)
-          example.columns[start] = column + [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(column))
+          example.number_columns[start] = column + [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(column))
           example.processed_number_columns[start] += [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(example.processed_number_columns[start]))
           start += 1
           example.column_mask.append(0.0)
 
         for remaining in range(num_cols, utility.FLAGS.max_number_cols):
           example.sorted_number_index.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
-          example.columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
+          example.number_columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
           example.processed_number_columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
           example.number_exact_match.append([0.0] * (utility.FLAGS.max_elements))
           example.number_group_by_max.append([0.0] * (utility.FLAGS.max_elements))
@@ -631,7 +631,7 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
   feed_dict[gr.batch_question_attention_mask] = [feed_examples[j].question_attention_mask for j in range(batch_size)]
 
   feed_dict[gr.batch_answer] = [feed_examples[j].answer for j in range(batch_size)]
-  feed_dict[gr.batch_number_column] = [feed_examples[j].columns for j in range(batch_size)]
+  feed_dict[gr.batch_number_column] = [feed_examples[j].number_columns for j in range(batch_size)]
 
   feed_dict[gr.batch_processed_number_column] = [feed_examples[j].processed_number_columns for j in range(batch_size)]
   feed_dict[gr.batch_processed_sorted_index_number_column] = [feed_examples[j].sorted_number_index for j in range(batch_size)]
