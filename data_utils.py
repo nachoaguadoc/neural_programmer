@@ -76,7 +76,7 @@ def construct_vocab(data, utility, add_word=False):
               utility.word_ids[word] = len(utility.word_ids)
               utility.reverse_word_ids[utility.word_ids[word]] = word
             else:
-              utility.word_count[word] += 1
+              utility.word_count[word] += 1 
 
 
 def word_lookup(word, utility):
@@ -268,7 +268,8 @@ def check_processed_cols(col, utility):
   ]
 
 
-def complete_wiki_processing(data, utility, train=True):
+def complete_wiki_processing(data, utility, key='train'):
+  train = True if key=='train' else False
   #convert to integers and padding
   processed_data = []
   num_bad_examples = 0
@@ -281,47 +282,45 @@ def complete_wiki_processing(data, utility, train=True):
       #entry match
       example.processed_number_columns = example.processed_number_columns[:]
       example.processed_word_columns = example.processed_word_columns[:]
-      example.word_exact_match, word_match, matched_indices = exact_match(
-          example.string_question, example.original_wc, number=False)
-      example.number_exact_match, number_match, _ = exact_match(
-          example.string_question, example.original_nc, number=True)
-      if (not (pick_one(example.word_exact_match)) and not (
-          pick_one(example.number_exact_match))):
+
+      example.word_exact_match, word_match, matched_indices = exact_match(example.string_question, example.original_wc, number=False)
+      example.number_exact_match, number_match, _ = exact_match(example.string_question, example.original_nc, number=True)
+      if (not (pick_one(example.word_exact_match)) and not (pick_one(example.number_exact_match))):
         assert len(word_match) == 0
         assert len(number_match) == 0
-        example.word_exact_match, word_match = partial_match(
-            example.string_question, example.original_wc, number=False)
+        example.word_exact_match, word_match = partial_match(example.string_question, example.original_wc, number=False)
+
       #group by max
       example.word_group_by_max = group_by_max(example.original_wc, False)
       example.number_group_by_max = group_by_max(example.original_nc, True)
+
       #column name match
-      example.word_column_exact_match, wcol_matched_indices = exact_column_match(
-          example.string_question, example.original_wc_names, number=False)
-      example.number_column_exact_match, ncol_matched_indices = exact_column_match(
-          example.string_question, example.original_nc_names, number=False)
-      if (not (1.0 in example.word_column_exact_match) and not (
-          1.0 in example.number_column_exact_match)):
-        example.word_column_exact_match = partial_column_match(
-            example.string_question, example.original_wc_names, number=False)
-        example.number_column_exact_match = partial_column_match(
-            example.string_question, example.original_nc_names, number=False)
+      example.word_column_exact_match, wcol_matched_indices = exact_column_match(example.string_question, example.original_wc_names, number=False)
+      example.number_column_exact_match, ncol_matched_indices = exact_column_match(example.string_question, example.original_nc_names, number=False)
+
+      if (not (1.0 in example.word_column_exact_match) and not (1.0 in example.number_column_exact_match)):
+        example.word_column_exact_match = partial_column_match(example.string_question, example.original_wc_names, number=False)
+        example.number_column_exact_match = partial_column_match(example.string_question, example.original_nc_names, number=False)
+      
       if (len(word_match) > 0 or len(number_match) > 0):
         example.question.append(utility.entry_match_token)
-      if (1.0 in example.word_column_exact_match or
-          1.0 in example.number_column_exact_match):
+      
+      if (1.0 in example.word_column_exact_match or 1.0 in example.number_column_exact_match):
         example.question.append(utility.column_match_token)
+     
       example.string_question = example.question[:]
-      example.number_lookup_matrix = np.transpose(
-          example.number_lookup_matrix)[:]
+      example.number_lookup_matrix = np.transpose(example.number_lookup_matrix)[:]
       example.word_lookup_matrix = np.transpose(example.word_lookup_matrix)[:]
+
       example.columns = example.number_columns[:]
       example.word_columns = example.word_columns[:]
-      example.len_total_cols = len(example.word_column_names) + len(
-          example.number_column_names)
+      example.len_total_cols = len(example.word_column_names) + len(example.number_column_names)
+
       example.column_names = example.number_column_names[:]
       example.word_column_names = example.word_column_names[:]
       example.string_column_names = example.number_column_names[:]
       example.string_word_column_names = example.word_column_names[:]
+
       example.sorted_number_index = []
       example.sorted_word_index = []
       example.column_mask = []
@@ -329,24 +328,27 @@ def complete_wiki_processing(data, utility, train=True):
       example.processed_column_mask = []
       example.processed_word_column_mask = []
       example.word_column_entry_mask = []
+
       example.question_attention_mask = []
       example.question_number = example.question_number_1 = -1
       example.question_attention_mask = []
       example.ordinal_question = []
       example.ordinal_question_one = []
+
       new_question = []
       if (len(example.number_columns) > 0):
         example.len_col = len(example.number_columns[0])
       else:
         example.len_col = len(example.word_columns[0])
+
       for (start, length) in matched_indices:
         for j in range(length):
           example.question[start + j] = utility.unk_token
+
       #print example.question
       for word in example.question:
         if (isinstance(word, numbers.Number) or wiki_data.is_date(word)):
-          if (not (isinstance(word, numbers.Number)) and
-              wiki_data.is_date(word)):
+          if (not (isinstance(word, numbers.Number)) and wiki_data.is_date(word)):
             word = word.replace("X", "").replace("-", "")
           number_found += 1
           if (number_found == 1):
@@ -358,79 +360,62 @@ def complete_wiki_processing(data, utility, train=True):
           elif (number_found == 2):
             example.question_number_1 = word
             if (len(example.ordinal_question_one) > 0):
-              example.ordinal_question_one[len(example.ordinal_question_one) -
-                                           1] = 1.0
+              example.ordinal_question_one[len(example.ordinal_question_one) - 1] = 1.0
             else:
               example.ordinal_question_one.append(1.0)
         else:
           new_question.append(word)
           example.ordinal_question.append(0.0)
           example.ordinal_question_one.append(0.0)
-      example.question = [
-          utility.word_ids[word_lookup(w, utility)] for w in new_question
-      ]
+
+      example.question = [utility.word_ids[word_lookup(w, utility)] for w in new_question]
       example.question_attention_mask = [0.0] * len(example.question)
+
       #when the first question number occurs before a word
-      example.ordinal_question = example.ordinal_question[0:len(
-          example.question)]
-      example.ordinal_question_one = example.ordinal_question_one[0:len(
-          example.question)]
+      example.ordinal_question = example.ordinal_question[0:len(example.question)]
+      example.ordinal_question_one = example.ordinal_question_one[0:len(example.question)]
+      
       #question-padding
-      example.question = [utility.word_ids[utility.dummy_token]] * (
-          utility.FLAGS.question_length - len(example.question)
-      ) + example.question
-      example.question_attention_mask = [-10000.0] * (
-          utility.FLAGS.question_length - len(example.question_attention_mask)
-      ) + example.question_attention_mask
-      example.ordinal_question = [0.0] * (utility.FLAGS.question_length -
-                                          len(example.ordinal_question)
-                                         ) + example.ordinal_question
-      example.ordinal_question_one = [0.0] * (utility.FLAGS.question_length -
-                                              len(example.ordinal_question_one)
-                                             ) + example.ordinal_question_one
+      example.question = [utility.word_ids[utility.dummy_token]] * (utility.FLAGS.question_length - len(example.question)) + example.question
+      example.question_attention_mask = [-10000.0] * (utility.FLAGS.question_length - len(example.question_attention_mask)) + example.question_attention_mask
+      example.ordinal_question = [0.0] * (utility.FLAGS.question_length - len(example.ordinal_question)) + example.ordinal_question
+      example.ordinal_question_one = [0.0] * (utility.FLAGS.question_length -len(example.ordinal_question_one)) + example.ordinal_question_one
+
       if (True):
         #number columns and related-padding
         num_cols = len(example.columns)
         start = 0
         for column in example.number_columns:
-          if (check_processed_cols(example.processed_number_columns[start],
-                                   utility)):
+          if (check_processed_cols(example.processed_number_columns[start],utility)):
             example.processed_column_mask.append(0.0)
           sorted_index = sorted(
               range(len(example.processed_number_columns[start])),
               key=lambda k: example.processed_number_columns[start][k],
               reverse=True)
-          sorted_index = sorted_index + [utility.FLAGS.pad_int] * (
-              utility.FLAGS.max_elements - len(sorted_index))
+
+          sorted_index = sorted_index + [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_number_index.append(sorted_index)
-          example.columns[start] = column + [utility.FLAGS.pad_int] * (
-              utility.FLAGS.max_elements - len(column))
-          example.processed_number_columns[start] += [utility.FLAGS.pad_int] * (
-              utility.FLAGS.max_elements -
-              len(example.processed_number_columns[start]))
+          example.columns[start] = column + [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(column))
+          example.processed_number_columns[start] += [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(example.processed_number_columns[start]))
           start += 1
           example.column_mask.append(0.0)
+
         for remaining in range(num_cols, utility.FLAGS.max_number_cols):
-          example.sorted_number_index.append([utility.FLAGS.pad_int] *
-                                             (utility.FLAGS.max_elements))
-          example.columns.append([utility.FLAGS.pad_int] *
-                                 (utility.FLAGS.max_elements))
-          example.processed_number_columns.append([utility.FLAGS.pad_int] *
-                                                  (utility.FLAGS.max_elements))
-          example.number_exact_match.append([0.0] *
-                                            (utility.FLAGS.max_elements))
-          example.number_group_by_max.append([0.0] *
-                                             (utility.FLAGS.max_elements))
+          example.sorted_number_index.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
+          example.columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
+          example.processed_number_columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
+          example.number_exact_match.append([0.0] * (utility.FLAGS.max_elements))
+          example.number_group_by_max.append([0.0] * (utility.FLAGS.max_elements))
           example.column_mask.append(-100000000.0)
           example.processed_column_mask.append(-100000000.0)
           example.number_column_exact_match.append(0.0)
           example.column_names.append([utility.dummy_token])
+
         #word column  and related-padding
         start = 0
         word_num_cols = len(example.word_columns)
         for column in example.word_columns:
-          if (check_processed_cols(example.processed_word_columns[start],
-                                   utility)):
+          if (check_processed_cols(example.processed_word_columns[start], utility)):
             example.processed_word_column_mask.append(0.0)
           sorted_index = sorted(
               range(len(example.processed_word_columns[start])),
@@ -440,36 +425,24 @@ def complete_wiki_processing(data, utility, train=True):
               utility.FLAGS.max_elements - len(sorted_index))
           example.sorted_word_index.append(sorted_index)
           column, _ = convert_to_int_2d_and_pad(column, utility, False)
-          example.word_columns[start] = column + [[
-              utility.word_ids[utility.dummy_token]
-          ] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements -
-                                                 len(column))
-          example.processed_word_columns[start] += [utility.FLAGS.pad_int] * (
-              utility.FLAGS.max_elements -
-              len(example.processed_word_columns[start]))
-          example.word_column_entry_mask.append([0] * len(column) + [
-              utility.word_ids[utility.dummy_token]
-          ] * (utility.FLAGS.max_elements - len(column)))
+          example.word_columns[start] = column + [[utility.word_ids[utility.dummy_token]] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements - len(column))
+          example.processed_word_columns[start] += [utility.FLAGS.pad_int] * (utility.FLAGS.max_elements - len(example.processed_word_columns[start]))
+          example.word_column_entry_mask.append([0] * len(column) + [utility.word_ids[utility.dummy_token]] * (utility.FLAGS.max_elements - len(column)))
           start += 1
           example.word_column_mask.append(0.0)
+
         for remaining in range(word_num_cols, utility.FLAGS.max_word_cols):
-          example.sorted_word_index.append([utility.FLAGS.pad_int] *
-                                           (utility.FLAGS.max_elements))
-          example.word_columns.append([[utility.word_ids[utility.dummy_token]] *
-                                       utility.FLAGS.max_entry_length] *
-                                      (utility.FLAGS.max_elements))
-          example.word_column_entry_mask.append(
-              [utility.word_ids[utility.dummy_token]] *
-              (utility.FLAGS.max_elements))
+          example.sorted_word_index.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
+          example.word_columns.append([[utility.word_ids[utility.dummy_token]] * utility.FLAGS.max_entry_length] * (utility.FLAGS.max_elements))
+          example.word_column_entry_mask.append([utility.word_ids[utility.dummy_token]] * (utility.FLAGS.max_elements))
           example.word_exact_match.append([0.0] * (utility.FLAGS.max_elements))
           example.word_group_by_max.append([0.0] * (utility.FLAGS.max_elements))
-          example.processed_word_columns.append([utility.FLAGS.pad_int] *
-                                                (utility.FLAGS.max_elements))
+          example.processed_word_columns.append([utility.FLAGS.pad_int] * (utility.FLAGS.max_elements))
           example.word_column_mask.append(-100000000.0)
           example.processed_word_column_mask.append(-100000000.0)
           example.word_column_exact_match.append(0.0)
-          example.word_column_names.append([utility.dummy_token] *
-                                           utility.FLAGS.max_entry_length)
+          example.word_column_names.append([utility.dummy_token] * utility.FLAGS.max_entry_length)
+
         seen_tables[example.table_key] = 1
       #convert column and word column names to integers
       true_mask = [1.] * utility.FLAGS.embedding_dims
@@ -499,51 +472,41 @@ def complete_wiki_processing(data, utility, train=True):
 
       for i_em in range(len(example.number_exact_match)):
         example.number_exact_match[i_em] = example.number_exact_match[
-            i_em] + [0.0] * (utility.FLAGS.max_elements -
-                             len(example.number_exact_match[i_em]))
+            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.number_exact_match[i_em]))
         example.number_group_by_max[i_em] = example.number_group_by_max[
-            i_em] + [0.0] * (utility.FLAGS.max_elements -
-                             len(example.number_group_by_max[i_em]))
+            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.number_group_by_max[i_em]))
       for i_em in range(len(example.word_exact_match)):
         example.word_exact_match[i_em] = example.word_exact_match[
-            i_em] + [0.0] * (utility.FLAGS.max_elements -
-                             len(example.word_exact_match[i_em]))
+            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.word_exact_match[i_em]))
         example.word_group_by_max[i_em] = example.word_group_by_max[
-            i_em] + [0.0] * (utility.FLAGS.max_elements -
-                             len(example.word_group_by_max[i_em]))
+            i_em] + [0.0] * (utility.FLAGS.max_elements - len(example.word_group_by_max[i_em]))
       example.exact_match = example.number_exact_match + example.word_exact_match
       example.group_by_max = example.number_group_by_max + example.word_group_by_max
       example.exact_column_match = example.number_column_exact_match + example.word_column_exact_match
+
       #answer and related mask, padding
       if (train and example.is_lookup):
         example.answer = example.calc_answer
         example.number_print_answer = example.number_lookup_matrix.tolist()
         example.word_print_answer = example.word_lookup_matrix.tolist()
         for i_answer in range(len(example.number_print_answer)):
-          example.number_print_answer[i_answer] = example.number_print_answer[
-              i_answer] + [0.0] * (utility.FLAGS.max_elements -
-                                   len(example.number_print_answer[i_answer]))
+          example.number_print_answer[i_answer] = example.number_print_answer[i_answer] + [0.0] * (utility.FLAGS.max_elements - len(example.number_print_answer[i_answer]))
         for i_answer in range(len(example.word_print_answer)):
-          example.word_print_answer[i_answer] = example.word_print_answer[
-              i_answer] + [0.0] * (utility.FLAGS.max_elements -
-                                   len(example.word_print_answer[i_answer]))
-        example.number_lookup_matrix = convert_to_bool_and_pad(
-            example.number_lookup_matrix, utility)
-        example.word_lookup_matrix = convert_to_bool_and_pad(
-            example.word_lookup_matrix, utility)
+          example.word_print_answer[i_answer] = example.word_print_answer[i_answer] + [0.0] * (utility.FLAGS.max_elements - len(example.word_print_answer[i_answer]))
+
+        example.number_lookup_matrix = convert_to_bool_and_pad(example.number_lookup_matrix, utility)
+        example.word_lookup_matrix = convert_to_bool_and_pad(example.word_lookup_matrix, utility)
         for remaining in range(num_cols, utility.FLAGS.max_number_cols):
-          example.number_lookup_matrix.append([False] *
-                                              utility.FLAGS.max_elements)
+          example.number_lookup_matrix.append([False] * utility.FLAGS.max_elements)
           example.number_print_answer.append([0.0] * utility.FLAGS.max_elements)
         for remaining in range(word_num_cols, utility.FLAGS.max_word_cols):
-          example.word_lookup_matrix.append([False] *
-                                            utility.FLAGS.max_elements)
+          example.word_lookup_matrix.append([False] * utility.FLAGS.max_elements)
           example.word_print_answer.append([0.0] * utility.FLAGS.max_elements)
         example.print_answer = example.number_print_answer + example.word_print_answer
+
       elif (train):
         example.answer = example.calc_answer
-        example.print_answer = [[0.0] * (utility.FLAGS.max_elements)] * (
-            utility.FLAGS.max_number_cols + utility.FLAGS.max_word_cols)
+        example.print_answer = [[0.0] * (utility.FLAGS.max_elements)] * (utility.FLAGS.max_number_cols + utility.FLAGS.max_word_cols)
       else:
         example.calc_answer = 0.0
         example.answer = 0.0
