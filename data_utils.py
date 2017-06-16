@@ -38,6 +38,7 @@ def construct_vocab(data, utility, add_word=False):
     example.original_wc = copy.deepcopy(example.word_columns)
     example.original_nc_names = copy.deepcopy(example.number_column_names)
     example.original_wc_names = copy.deepcopy(example.word_column_names)
+
     if (add_word):
       continue
     number_found = 0
@@ -339,6 +340,8 @@ def complete_wiki_processing(data, utility, key='train'):
 
       example.number_column_names = example.number_column_names[:]
       example.word_column_names = example.word_column_names[:]
+      example.number_column_descriptions = example.number_column_descriptions[:]
+      example.word_column_descriptions = example.word_column_descriptions[:]
       example.string_column_names = example.number_column_names[:]
       example.string_word_column_names = example.word_column_names[:]
 
@@ -473,8 +476,14 @@ def complete_wiki_processing(data, utility, key='train'):
       true_mask = [1.] * utility.FLAGS.embedding_dims
       false_mask = [0.] * utility.FLAGS.embedding_dims
 
+      print("************************")
+      print("IDs pre padding: ", len(example.number_column_descriptions), example.number_column_descriptions)
       example.number_column_ids, example.number_column_name_lengths = convert_to_int_2d_and_pad(example.number_column_names, utility, utility.FLAGS.max_entry_length, True)
       example.number_column_description_ids, example.number_column_description_lengths = convert_to_int_2d_and_pad(example.number_column_descriptions, utility, utility.FLAGS.max_description, True)
+      print("IDs post padding: ", len(example.number_column_description_ids), example.number_column_description_ids)
+      print("Lengths: ", len(example.number_column_description_ids), example.number_column_description_ids)
+
+
 
       example.number_column_name_mask = []
       for ci in example.number_column_ids:
