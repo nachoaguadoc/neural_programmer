@@ -145,14 +145,16 @@ class WikiExample(object):
 
 class TableInfo(object):
 
-  def __init__(self, word_columns, word_column_names, word_column_indices,
-               number_columns, number_column_names, number_column_indices,
+  def __init__(self, word_columns, word_column_names, word_column_descriptions, word_column_indices,
+               number_columns, number_column_names, number_column_descriptions, number_column_indices,
                processed_word_columns, processed_number_columns, orig_columns):
     self.word_columns = word_columns
     self.word_column_names = word_column_names
+    self.word_column_descriptions = word_column_descriptions
     self.word_column_indices = word_column_indices
     self.number_columns = number_columns
     self.number_column_names = number_column_names
+    self.number_column_descriptions = number_column_descriptions
     self.number_column_indices = number_column_indices
     self.processed_word_columns = processed_word_columns
     self.processed_number_columns = processed_number_columns
@@ -302,8 +304,13 @@ class WikiQuestionGenerator(object):
             question_id, question, target_canon, context, utterance)
         self.annotated_tables[context] = []
       counter += 1
-    self.annotated_tables['csv/204-csv/custom-1.csv'] = []
     print "Annotated examples loaded ", len(self.annotated_examples)
+    f.close()
+
+  def load_custom_data(self):
+    self.custom_tables = {}
+    self.custom_tables['csv/204-csv/custom-1.csv'] = []
+    print "Custom examples loaded ", len(self.annotated_examples)
     f.close()
 
   def load_test_data(self, question_id, input, context):
@@ -449,6 +456,101 @@ class WikiQuestionGenerator(object):
       self.annotated_tables[table] = table_info
       f.close()
 
+  def load_custom_tables(self):
+    for table in self.custom_tables.keys():
+      annotated_table = table.replace("csv", "annotated")
+      orig_columns = []
+      processed_columns = []
+      f = tf.gfile.GFile(os.path.join(self.root_folder, annotated_table), "r")
+      counter = 0
+      for line in f:
+        if (counter > 0):
+          line = line.strip()
+          line = line + "\t" * (13 - len(line.split("\t")))
+          (row, col, read_id, content, tokens, lemma_tokens, pos_tags, ner_tags,
+           ner_values, number, date, num2, read_list) = line.split("\t")
+        counter += 1
+      f.close()
+      max_row = int(row)
+      max_col = int(col)
+      for i in range(max_col + 1):
+        orig_columns.append([])
+        processed_columns.append([])
+        for j in range(max_row + 1):
+          orig_columns[i].append(bad_number)
+          processed_columns[i].append(bad_number)
+      #print orig_columns
+      f = tf.gfile.GFile(os.path.join(self.root_folder, annotated_table), "r")
+      counter = 0
+      column_names = []
+      column_descriptions = []
+      for line in f:
+        if (counter > 0):
+          line = line.strip()
+          line = line + "\t" * (13 - len(line.split("\t")))
+          (row, col, read_id, content, tokens, lemma_tokens, pos_tags, ner_tags,
+           ner_values, number, date, num2, read_list) = line.split("\t")
+          entry = self.pre_process_sentence(tokens, ner_tags, ner_values)
+          if (row == "-2"):
+            column_names.append(entry)
+          if (row == "-1"):
+            column_descriptions.append(entry)
+          else:
+            orig_columns[int(col)][int(row)] = entry
+            if (len(entry) == 1 and is_number(entry[0])):
+              processed_columns[int(col)][int(row)] = float(entry[0])
+            else:
+              for single_entry in entry:
+                if (is_number(single_entry)):
+                  processed_columns[int(col)][int(row)] = float(single_entry)
+                  break
+              nt = ner_tags.split("|")
+              nv = ner_values.split("|")
+              for i_entry in range(len(tokens.split("|"))):
+                if (nt[i_entry] == "DATE" and
+                    is_number(nv[i_entry].replace("-", "").replace("X", ""))):
+                  processed_columns[int(col)][int(row)] = float(nv[
+                      i_entry].replace("-", "").replace("X", ""))
+                  #processed_columns[int(col)][int(row)] =  float(nv[i_entry])
+            if (len(entry) == 1 and (is_number(entry[0]) or is_date(entry[0]) or
+                                     self.is_money(entry[0]))):
+              if (len(entry) == 1 and not (is_number(entry[0])) and
+                  is_date(entry[0])):
+                entry[0] = entry[0].replace("X", "x")
+        counter += 1
+      word_columns = []
+      processed_word_columns = []
+      word_column_names = []
+      word_column_descriptions = []
+      word_column_indices = []
+      number_columns = []
+      processed_number_columns = []
+      number_column_names = []
+      number_column_descriptions = []
+      number_column_indices = []
+      for i in range(max_col + 1):
+        if (self.is_number_column(orig_columns[i])):
+          number_column_indices.append(i)
+          number_column_names.append(column_names[i])
+          number_column_descriptions.append(column_descriptions[i])
+          temp = []
+          for w in orig_columns[i]:
+            if (is_number(w[0])):
+              temp.append(w[0])
+          number_columns.append(temp)
+          processed_number_columns.append(processed_columns[i])
+        else:
+          word_column_indices.append(i)
+          word_column_names.append(column_names[i])
+          word_column_descriptions.append(column_descriptions[i])
+          word_columns.append(orig_columns[i])
+          processed_word_columns.append(processed_columns[i])
+      table_info = TableInfo(
+          word_columns, word_column_names, word_column_descriptions, word_column_indices, number_columns,
+          number_column_names, number_column_descriptions, number_column_indices, processed_word_columns,
+          processed_number_columns, orig_columns)
+      self.custom_tables[table] = table_info
+      f.close()
   def answer_classification(self):
     lookup_questions = 0
     number_lookup_questions = 0
@@ -546,7 +648,7 @@ class WikiQuestionGenerator(object):
   def answer_classification_test(self, q_id):
 
     example = self.test_examples[q_id]
-    table_info = self.annotated_tables[example.table_key]
+    table_info = self.custom_tables[example.table_key]
     # Figure out if the answer is numerical or lookup
     n_cols = len(table_info.orig_columns)
     n_rows = len(table_info.orig_columns[0])
@@ -558,9 +660,13 @@ class WikiQuestionGenerator(object):
     example.word_columns = table_info.word_columns
     example.number_columns = table_info.number_columns
     example.word_column_names = table_info.word_column_names
+    example.word_column_descriptions = table_info.word_column_descriptions
+
     example.processed_number_columns = table_info.processed_number_columns
     example.processed_word_columns = table_info.processed_word_columns
     example.number_column_names = table_info.number_column_names
+    example.number_column_descriptions = table_info.number_column_descriptions
+
     example.number_lookup_matrix = example.lookup_matrix[:,
                                                          number_column_indices]
     example.word_lookup_matrix = example.lookup_matrix[:, word_column_indices]
@@ -577,7 +683,10 @@ class WikiQuestionGenerator(object):
     test_data = []
     self.load_annotated_data(
         os.path.join(self.data_folder, "training.annotated"))
+    self.load_custom_data()
     self.load_annotated_tables()
+    self.load_custom_tables()
+
     self.answer_classification()
     self.train_loader.load()
     self.dev_loader.load()
