@@ -506,14 +506,14 @@ class WikiQuestionGenerator(object):
             pos_tags = nltk.pos_tag(entry)
             new_entry = []
             for t in pos_tags:
-              if t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
+              if t[0] != 'UNK' and  t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
                 new_entry.append(t[0])
             print("Old entry:", entry)
             print("New entry:", new_entry)
             print("*********")
-            column_names.append(new_entry)
+            column_descriptions.append(new_entry)
           if (row == "-1"):
-            column_descriptions.append(entry)
+            column_names.append(entry)
           else:
             orig_columns[int(col)][int(row)] = entry
             if (len(entry) == 1 and is_number(entry[0])):

@@ -127,7 +127,7 @@ def get_prediction(sess, data, graph, utility):
     op_index = np.where(ops[i] == 1)[1][0]
     col_index = np.where(cols[i] == 1)[1][0]
     if col_index < 15:
-      col = data[0].column_names[col_index][0]
+      col = data[0].number_column_names[col_index][0]
     else:
       col = data[0].word_column_names[col_index-15][0]
     op = utility.operations_set[op_index]
@@ -142,7 +142,7 @@ def get_prediction(sess, data, graph, utility):
     if not all(p == 0 for p in lookup_answer[col]):
       return_scalar = False
       if col < 15:
-        col_name = data[j].column_names[col]
+        col_name = data[j].number_column_names[col]
       else:
         col_name = data[j].word_column_names[col-15]
       lookup_answers.append([col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
