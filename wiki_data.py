@@ -29,6 +29,7 @@ import re
 import numpy as np
 import unicodedata as ud
 import tensorflow as tf
+import nltk 
 
 bad_number = -200000.0  #number that is added to a corrupted table entry in a number column
 
@@ -502,7 +503,15 @@ class WikiQuestionGenerator(object):
            ner_values, number, date, num2, read_list) = line.split("\t")
           entry = self.pre_process_sentence(tokens, ner_tags, ner_values)
           if (row == "-2"):
-            column_names.append(entry)
+            pos_tags = nltk.pos_tag(entry)
+            new_entry = []
+            for t in pos_tags:
+              if t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
+                new_entry.append(t[0])
+            print("Old entry:", entry)
+            print("New entry:", new_entry)
+            print("*********")
+            column_names.append(new_entry)
           if (row == "-1"):
             column_descriptions.append(entry)
           else:
