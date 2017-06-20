@@ -133,14 +133,13 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
           lookup_answers.append([[i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
           #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
       if return_scalar:
-        predictions.append(scalar_answer)
+        final_predictions.append(scalar_answer)
       else:
-        print("Lookup answers:", len(lookup_answers))
         for a in lookup_answers:
           rows = a[0]
           col = a[1]
-          print("Lookup answer rows:", len(rows))
           for row in rows:
+            final_answer = ''
             if col < 15:
               list_answer = dat.custom_tables[table_key].number_columns[col][row]
             else:
@@ -150,8 +149,8 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
             else:
               for l in list_answer:
                 final_answer += " " + str(l)
-      # ADD FINAL EVALUATION
-
+        final_predictions.append(final_answer)
+    return final_predictions
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
@@ -272,8 +271,18 @@ def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
     
     data_utils.construct_vocab(data, utility, True)
     final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
-    evaluate_custom(sess, final_data, answers, batch_size, graph, table_keys[0], dat)
-
+    predictions = evaluate_custom(sess, final_data, answers, batch_size, graph, table_keys[0], dat)
+    total = len(predictions)
+    correct = 0.0
+    for i in range(total):
+      if predictions[i] == answers[i]:
+        correct += 1
+      else:
+        print(predictions[i], answers[i])
+    accuracy = (correct / total) * 100
+    print("Total test cases:", total)
+    print("Correct answers:", correct)
+    print("Accuracy:", accuracy)
 def master(train_data, dev_data, utility, dat):
   #creates TF graph and calls trainer or evaluator
   batch_size = utility.FLAGS.batch_size 
