@@ -236,6 +236,7 @@ class WikiQuestionGenerator(object):
     self.data_folder = os.path.join(self.root_folder, "annotated/data")
     self.annotated_examples = {}
     self.annotated_tables = {}
+    self.custom_tables = {}
     self.test_examples = {}
     self.annotated_word_reject = {}
     self.annotated_word_reject["-lrb-"] = 1

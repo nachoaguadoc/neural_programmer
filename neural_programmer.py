@@ -109,7 +109,7 @@ def evaluate(sess, data, batch_size, graph, i):
   print num_examples, len(data)
   print "--------"
 
-def evaluate_custom(sess, data, answers, batch_size, graph, table_key):
+def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
   #computes accuracy
   num_examples = 0.0
   gc = 0.0
@@ -140,11 +140,11 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key):
           rows = a[0]
           col = a[1]
           print("Lookup answer rows:", len(rows))
-          for row in rows
+          for row in rows:
             if col < 15:
-              list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+              list_answer = dat.custom_tables[table_key].number_columns[col][row]
             else:
-              list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+              list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
             if type(list_answer) == float:
               final_answer = str(list_answer)
             else:
@@ -272,7 +272,7 @@ def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
     
     data_utils.construct_vocab(data, utility, True)
     final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
-    evaluate_custom(sess, final_data, answers, batch_size, graph, table_keys[0])
+    evaluate_custom(sess, final_data, answers, batch_size, graph, table_keys[0], dat)
 
 def master(train_data, dev_data, utility, dat):
   #creates TF graph and calls trainer or evaluator
