@@ -109,17 +109,48 @@ def evaluate(sess, data, batch_size, graph, i):
   print num_examples, len(data)
   print "--------"
 
-def evaluate_custom(sess, data, answers, batch_size, graph):
+def evaluate_custom(sess, data, answers, batch_size, graph, table_key):
   #computes accuracy
   num_examples = 0.0
   gc = 0.0
-  for j in range(0, len(data) - batch_size + 1, batch_size):
-    [predictions] = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
-    print(len(predictions))
-    print(predictions[0])
+  final_predictions = []
+  for curr in range(0, len(data) - batch_size + 1, batch_size):
+    [predictions] = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
 
-    print(predictions[1])
-    #print("**************")
+    for i in range(batch_size):
+      scalar_answer = predictions[0][i]
+      lookup_answer = predictions[1][i]
+      return_scalar = True
+      lookup_answers = []
+      j = 0
+      for col in range(len(lookup_answer)):
+        if not all(p == 0 for p in lookup_answer[col]):
+          return_scalar = False
+          if col < 15:
+            col_name = data[j].number_column_names[col]
+          else:
+            col_name = data[j].word_column_names[col-15]
+          lookup_answers.append([[i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
+          #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
+      if return_scalar:
+        predictions.append(scalar_answer)
+      else:
+        print("Lookup answers:", len(lookup_answers))
+        for a in lookup_answers:
+          rows = a[0]
+          col = a[1]
+          print("Lookup answer rows:", len(rows))
+          for row in rows
+            if col < 15:
+              list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+            else:
+              list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+            if type(list_answer) == float:
+              final_answer = str(list_answer)
+            else:
+              for l in list_answer:
+                final_answer += " " + str(l)
+      # ADD FINAL EVALUATION
 
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
@@ -241,7 +272,7 @@ def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
     
     data_utils.construct_vocab(data, utility, True)
     final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
-    evaluate_custom(sess, final_data, answers, batch_size, graph)
+    evaluate_custom(sess, final_data, answers, batch_size, graph, table_keys[0])
 
 def master(train_data, dev_data, utility, dat):
   #creates TF graph and calls trainer or evaluator
