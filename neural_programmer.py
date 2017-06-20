@@ -150,7 +150,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
             else:
               for l in list_answer:
                 final_answer += " " + str(l)
-        final_answer = final_answer[1:]
+              final_answer = final_answer[1:]
         final_predictions.append(final_answer)
   return final_predictions
 
@@ -285,6 +285,7 @@ def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
     print("Total test cases:", total)
     print("Correct answers:", correct)
     print("Accuracy:", accuracy)
+
 def master(train_data, dev_data, utility, dat):
   #creates TF graph and calls trainer or evaluator
   batch_size = utility.FLAGS.batch_size 
