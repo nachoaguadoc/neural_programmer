@@ -42,20 +42,23 @@ def strip_accents(s):
   return u_new.encode("utf-8")
 
 def load_custom_questions(file_path):
-  f = tf.gfile.GFile('testing.examples', "r")
+  f = tf.gfile.GFile(file_path, "r")
   ids = []
   questions = []
   table_keys = []
   answers = []
-
+  counter = 0
   for line in f:
     fields = line.split('\t')
     for f in fields:
-      f = f.replace('\n', '')
-    ids.append(fields[0])
-    questions.append(fields[1])
-    table_keys.append(fields[2])
-    answers.append(fields[3])
+      if counter > 0:
+        f = f.replace('\n', '')
+    if counter > 0:
+      ids.append(fields[0])
+      questions.append(fields[1])
+      table_keys.append(fields[2])
+      answers.append(fields[3])
+    counter += 1
   return ids, questions, table_keys, answers
 
 
@@ -327,7 +330,7 @@ class WikiQuestionGenerator(object):
 
   def load_custom_data(self):
     self.custom_tables = {}
-    self.custom_tables['csv/204-csv/custom-1.csv'] = []
+    self.custom_tables['csv/204-csv/custom-1-baseline.csv'] = []
     print "Custom examples loaded ", len(self.annotated_examples)
 
   def load_test_data(self, question_id, input, context):
@@ -723,7 +726,7 @@ class WikiQuestionGenerator(object):
     self.load_annotated_data(os.path.join(self.data_folder, "training.annotated"))
     self.load_annotated_tables()
 
-    if (mode=='demo'):
+    if (mode=='demo' or mode=='test'):
       self.load_custom_data()
       self.load_custom_tables()
 

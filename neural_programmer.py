@@ -115,8 +115,11 @@ def evaluate_custom(sess, data, answers, batch_size, graph):
   gc = 0.0
   for j in range(0, len(data) - batch_size + 1, batch_size):
     [predictions] = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
-    print(predictions)
-    print("**************")
+    print(len(predictions))
+    print(predictions[0])
+
+    print(predictions[1])
+    #print("**************")
 
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
@@ -230,10 +233,10 @@ def Demo(graph, utility, sess, model_dir, dat):
 
 def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
 
-    ids, questions, table_keys, answers = load_custom_questions('data/data/testing.examples')
-
+    ids, questions, table_keys, answers = wiki_data.load_custom_questions('data/data/testing.examples')
+    data = []
     for i in range(len(questions)):
-      example = dat.load_example(questions_id[i], questions[i], table_keys[i])
+      example = dat.load_example(ids[i], questions[i], table_keys[i])
       data.append(example) 
     
     data_utils.construct_vocab(data, utility, True)
@@ -265,33 +268,33 @@ def master(train_data, dev_data, utility, dat):
       print("restoring: ", model_file)
       saver.restore(sess, model_dir + model_file)
       Test(graph, utility, batch_size, sess, model_dir, dat, 'testing.annotated')  
-    '''
-    if (key == 'test'):
-      while True:
-        selected_models = {}
-        file_list = tf.gfile.ListDirectory(model_dir)
-        for model_file in file_list:
-          if ("checkpoint" in model_file or "index" in model_file or
-              "meta" in model_file):
-            continue
-          if ("data" in model_file):
-            model_file = model_file.split(".")[0]
-          model_step = int(
-              model_file.split("_")[len(model_file.split("_")) - 1])
-          selected_models[model_step] = model_file
-        file_list = sorted(selected_models.items(), key=lambda x: x[0])
-        if (len(file_list) > 0):
-          file_list = file_list[0:len(file_list) - 1]
-        print "list of models: ", file_list
-        for model_file in file_list:
-          model_file = model_file[1]
-          print "restoring: ", model_file
-          saver.restore(sess, model_dir + "/" + model_file)
-          model_step = int(
-              model_file.split("_")[len(model_file.split("_")) - 1])
-          print "evaluating on dev ", model_file, model_step
-          evaluate(sess, dev_data, batch_size, graph, model_step)
-    '''
+      '''
+      if (key == 'test'):
+        while True:
+          selected_models = {}
+          file_list = tf.gfile.ListDirectory(model_dir)
+          for model_file in file_list:
+            if ("checkpoint" in model_file or "index" in model_file or
+                "meta" in model_file):
+              continue
+            if ("data" in model_file):
+              model_file = model_file.split(".")[0]
+            model_step = int(
+                model_file.split("_")[len(model_file.split("_")) - 1])
+            selected_models[model_step] = model_file
+          file_list = sorted(selected_models.items(), key=lambda x: x[0])
+          if (len(file_list) > 0):
+            file_list = file_list[0:len(file_list) - 1]
+          print "list of models: ", file_list
+          for model_file in file_list:
+            model_file = model_file[1]
+            print "restoring: ", model_file
+            saver.restore(sess, model_dir + "/" + model_file)
+            model_step = int(
+                model_file.split("_")[len(model_file.split("_")) - 1])
+            print "evaluating on dev ", model_file, model_step
+            evaluate(sess, dev_data, batch_size, graph, model_step)
+      '''
     elif (key == 'train'):
       ckpt = tf.train.get_checkpoint_state(model_dir)
       print "model dir: ", model_dir
