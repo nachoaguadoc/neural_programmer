@@ -519,6 +519,10 @@ class WikiQuestionGenerator(object):
           line = line + "\t" * (13 - len(line.split("\t")))
           (row, col, read_id, content, tokens, lemma_tokens, pos_tags, ner_tags,
            ner_values, number, date, num2, read_list) = line.split("\t")
+          tokens = nltk.word_tokenize(content)
+          ner_tags = 'O|' * len(tokens)
+          ner_tags = ner_tags[:-1]
+          ner_values = '|' * (len(tokens)-1)
           entry = self.pre_process_sentence(tokens, ner_tags, ner_values)
           if (row == "-2"):
             pos_tags = nltk.pos_tag(entry)
