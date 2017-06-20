@@ -103,36 +103,43 @@ def evaluate(sess, data, batch_size, graph, i):
     [ct] = sess.run([graph.final_correct],
                     feed_dict=data_utils.generate_feed_dict(data, j, batch_size,
                                                             graph))
-    print("******************************")
-    print(ct)
     gc += ct * batch_size
     num_examples += batch_size
   print "dev set accuracy   after ", i, " : ", gc / num_examples
   print num_examples, len(data)
   print "--------"
 
+def evaluate_custom(sess, data, answers, batch_size, graph):
+  #computes accuracy
+  num_examples = 0.0
+  gc = 0.0
+  for j in range(0, len(data) - batch_size + 1, batch_size):
+    [predictions] = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
+    print(predictions)
+    print("**************")
 
-def get_prediction(sess, data, graph, utility):
-  answers = sess.run([graph.answers],
-                feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
+
+def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
+
+  if (debug):
+    steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
+    ops = steps[0]['ops']
+    cols = steps[0]['cols']
+    print("------------- Debugging step by step -------------")
+    for i in range(len(ops)):
+      op_index = np.where(ops[i] == 1)[1][0]
+      col_index = np.where(cols[i] == 1)[1][0]
+      if col_index < 15:
+        col = data[0].number_column_names[col_index][0]
+      else:
+        col = data[0].word_column_names[col_index-15][0]
+      op = utility.operations_set[op_index]
+      print("Step" + str(i) + ": Operation " + op + " and Column " + col)
+    print("---------------------------------------")
+
+  answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
   scalar_answer = answers[0][0][0]
   lookup_answer = answers[0][1][0]
-  steps = sess.run([graph.steps],
-                feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
-  #print("STEPS:", steps)
-  ops = steps[0]['ops']
-  cols = steps[0]['cols']
-  print("------------- Debugging step by step -------------")
-  for i in range(len(ops)):
-    op_index = np.where(ops[i] == 1)[1][0]
-    col_index = np.where(cols[i] == 1)[1][0]
-    if col_index < 15:
-      col = data[0].number_column_names[col_index][0]
-    else:
-      col = data[0].word_column_names[col_index-15][0]
-    op = utility.operations_set[op_index]
-    print("Step" + str(i) + ": Operation " + op + " and Column " + col)
-  print("---------------------------------------")
   print("Scalar output:", scalar_answer)
   print("Lookup output:")
   return_scalar = True
@@ -154,7 +161,7 @@ def get_prediction(sess, data, graph, utility):
 
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
-  #performs training
+  #performs   
   curr = 0
   train_set_loss = 0.0
   utility.random.shuffle(train_data)
@@ -221,6 +228,17 @@ def Demo(graph, utility, sess, model_dir, dat):
     conn.send(final_answer.encode())
     conn.close() 
 
+def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
+
+    ids, questions, table_keys, answers = load_custom_questions('data/data/testing.examples')
+
+    for i in range(len(questions)):
+      example = dat.load_example(questions_id[i], questions[i], table_keys[i])
+      data.append(example) 
+    
+    data_utils.construct_vocab(data, utility, True)
+    final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
+    evaluate_custom(sess, final_data, answers, batch_size, graph)
 
 def master(train_data, dev_data, utility, dat):
   #creates TF graph and calls trainer or evaluator
@@ -242,6 +260,12 @@ def master(train_data, dev_data, utility, dat):
     sess.run(graph.init_op.name)
     to_save = params.copy()
     saver = tf.train.Saver(to_save, max_to_keep=500)
+    if (key == 'test'):
+      model_file = 'model_' + utility.FLAGS.model_id
+      print("restoring: ", model_file)
+      saver.restore(sess, model_dir + model_file)
+      Test(graph, utility, batch_size, sess, model_dir, dat, 'testing.annotated')  
+    '''
     if (key == 'test'):
       while True:
         selected_models = {}
@@ -267,6 +291,7 @@ def master(train_data, dev_data, utility, dat):
               model_file.split("_")[len(model_file.split("_")) - 1])
           print "evaluating on dev ", model_file, model_step
           evaluate(sess, dev_data, batch_size, graph, model_step)
+    '''
     elif (key == 'train'):
       ckpt = tf.train.get_checkpoint_state(model_dir)
       print "model dir: ", model_dir

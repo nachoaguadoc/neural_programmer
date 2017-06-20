@@ -41,6 +41,23 @@ def strip_accents(s):
   u_new = ''.join(c for c in ud.normalize('NFKD', u) if ud.category(c) != 'Mn')
   return u_new.encode("utf-8")
 
+def load_custom_questions(file_path):
+  f = tf.gfile.GFile('testing.examples', "r")
+  ids = []
+  questions = []
+  table_keys = []
+  answers = []
+
+  for line in f:
+    fields = line.split('\t')
+    for f in fields:
+      f = f.replace('\n', '')
+    ids.append(fields[0])
+    questions.append(fields[1])
+    table_keys.append(fields[2])
+    answers.append(fields[3])
+  return ids, questions, table_keys, answers
+
 
 def correct_unicode(string):
   string = strip_accents(string)
