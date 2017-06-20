@@ -134,7 +134,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
           lookup_answers.append([[i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
           #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
       if return_scalar:
-        final_predictions.append(scalar_answer)
+        final_predictions.append(str(int(scalar_answer)))
       else:
         for a in lookup_answers:
           rows = a[0]
@@ -150,6 +150,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
             else:
               for l in list_answer:
                 final_answer += " " + str(l)
+        final_answer = final_answer[1:]
         final_predictions.append(final_answer)
   return final_predictions
 

@@ -526,13 +526,16 @@ class WikiQuestionGenerator(object):
             for t in pos_tags:
               if t[0] != 'UNK' and  t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
                 new_entry.append(t[0])
-            print("Old entry:", entry)
-            print("New entry:", new_entry)
-            print("*********")
+            print("Processing column descriptions:")
+            print("       Old entry:", entry)
             if model == 'column_description':
+              print("       New entry:", new_entry)
               column_descriptions.append(new_entry)
             else:
+              print("       New entry:", "[]")
               column_descriptions.append([])
+            print("*********")
+
           if (row == "-1"):
             column_names.append(entry)
           else:
