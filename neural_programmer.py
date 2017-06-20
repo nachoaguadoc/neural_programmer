@@ -48,6 +48,7 @@ tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0, "weighting factor in the objective function")
 
 tf.flags.DEFINE_string("job_id", "_baseline", """job id""")
+tf.flags.DEFINE_string("model", "baseline", """model to evaluate""")
 tf.flags.DEFINE_string("output_dir", "model/embeddings/", """output_dir""")
 tf.flags.DEFINE_string("model_id", "96500", """model id""")
 tf.flags.DEFINE_string("data_dir", "data/", """data_dir""")
@@ -150,7 +151,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
               for l in list_answer:
                 final_answer += " " + str(l)
         final_predictions.append(final_answer)
-    return final_predictions
+  return final_predictions
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
@@ -361,7 +362,7 @@ def main(args):
   test_name = "pristine-unseen-tables.examples"
   #load data
   dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
-  train_data, dev_data, test_data = dat.load(FLAGS.job_mode)
+  train_data, dev_data, test_data = dat.load(FLAGS.job_mode, FLAGS.model)
   utility.words = []
   utility.word_ids = {}
   utility.reverse_word_ids = {}

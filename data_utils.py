@@ -316,7 +316,7 @@ def complete_wiki_processing(data, utility, key='train'):
         example.word_column_exact_match = partial_column_match(example.string_question, example.original_wc_names, number=False)
         example.number_column_exact_match = partial_column_match(example.string_question, example.original_nc_names, number=False)
       
-      if (key=='demo'):
+      if (key=='demo' or key=='test'):
         example.word_column_description_match, word_token = partial_column_description_match(example.string_question, example.word_column_descriptions, demo=True)
         example.number_column_description_match, col_token = partial_column_description_match(example.string_question, example.number_column_descriptions, demo=True)
       else:

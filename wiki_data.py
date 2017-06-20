@@ -50,14 +50,11 @@ def load_custom_questions(file_path):
   counter = 0
   for line in f:
     fields = line.split('\t')
-    for f in fields:
-      if counter > 0:
-        f = f.replace('\n', '')
     if counter > 0:
       ids.append(fields[0])
       questions.append(fields[1])
       table_keys.append(fields[2])
-      answers.append(fields[3])
+      answers.append(fields[3].replace('\n', ''))
     counter += 1
   return ids, questions, table_keys, answers
 
@@ -488,7 +485,7 @@ class WikiQuestionGenerator(object):
       self.annotated_tables[table] = table_info
       f.close()
 
-  def load_custom_tables(self):
+  def load_custom_tables(self, model):
     for table in self.custom_tables.keys():
       annotated_table = table.replace("csv", "annotated")
       orig_columns = []
@@ -532,7 +529,10 @@ class WikiQuestionGenerator(object):
             print("Old entry:", entry)
             print("New entry:", new_entry)
             print("*********")
-            column_descriptions.append(new_entry)
+            if model == 'column_description':
+              column_descriptions.append(new_entry)
+            else:
+              column_descriptions.append([])
           if (row == "-1"):
             column_names.append(entry)
           else:
@@ -720,7 +720,7 @@ class WikiQuestionGenerator(object):
     example = self.answer_classification_test(question_id)
     return example
 
-  def load(self, mode):
+  def load(self, mode, model='baseline'):
     train_data = []
     dev_data = []
     test_data = []
@@ -729,7 +729,7 @@ class WikiQuestionGenerator(object):
 
     if (mode=='demo' or mode=='test'):
       self.load_custom_data()
-      self.load_custom_tables()
+      self.load_custom_tables(model)
 
     self.answer_classification()
     self.train_loader.load()
