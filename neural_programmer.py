@@ -146,7 +146,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
             else:
               list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
             if type(list_answer) == float:
-              final_answer = str(list_answer)
+              final_answer = str(int(list_answer))
             else:
               for l in list_answer:
                 final_answer += " " + str(l)
@@ -280,7 +280,7 @@ def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
       if predictions[i] == answers[i]:
         correct += 1
       else:
-        print(predictions[i], answers[i])
+        print(questions[i], predictions[i], answers[i])
     accuracy = (correct / total) * 100
     print("Total test cases:", total)
     print("Correct answers:", correct)
