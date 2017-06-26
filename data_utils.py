@@ -199,7 +199,7 @@ def partial_column_description_match(question, table, demo):
     for i in range(len(table)):
       for word in question:
         if (word in table[i]):
-          answer[i] += 1.0
+          answer[i] = 1.0
           add_token = True
   return answer, add_token
 

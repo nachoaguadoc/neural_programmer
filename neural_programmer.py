@@ -265,7 +265,7 @@ def Demo(graph, utility, sess, model_dir, dat):
 
 def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
 
-    ids, questions, table_keys, answers = wiki_data.load_custom_questions('data/data/testing.examples')
+    ids, questions, table_keys, answers = wiki_data.load_custom_questions(file_name)
     data = []
     for i in range(len(questions)):
       example = dat.load_example(ids[i], questions[i], table_keys[i])
@@ -310,7 +310,7 @@ def master(train_data, dev_data, utility, dat):
       model_file = 'model_' + utility.FLAGS.model_id
       print("restoring: ", model_file)
       saver.restore(sess, model_dir + model_file)
-      Test(graph, utility, batch_size, sess, model_dir, dat, 'testing.annotated')  
+      Test(graph, utility, batch_size, sess, model_dir, dat, 'data/data/package.examples')  
       '''
       if (key == 'test'):
         while True:

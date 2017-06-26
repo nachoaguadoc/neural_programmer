@@ -334,6 +334,8 @@ class WikiQuestionGenerator(object):
   def load_test_data(self, question_id, input, context):
     more_words = ['greater', 'more', 'bigger']
     less_words = ['lesser', 'less', 'smaller']
+    input = input.replace("?", " ?")
+    input = input.lower()    
     symb = ''
     for c in more_words:
       if c in input:

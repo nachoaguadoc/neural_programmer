@@ -240,7 +240,7 @@ class Graph():
     self.full_column_hidden_vectors += self.summary_text_entry_embeddings
     self.full_column_hidden_vectors = nn_utils.apply_dropout(
         self.full_column_hidden_vectors, self.utility.FLAGS.dropout, self.mode)
-    column_logits = tf.reduce_sum(column_controller_vector * self.full_column_hidden_vectors, 2) + (self.params["word_match_feature_column_name"] * self.batch_column_exact_match) + (self.params["word_match_feature_column_name"]* 0.5 * self.batch_column_description_match) + self.full_column_mask
+    column_logits = tf.reduce_sum(column_controller_vector * self.full_column_hidden_vectors, 2) + ((self.params["word_match_feature_column_name"] * self.batch_column_exact_match) + (self.params["word_match_feature_column_name"]* self.batch_column_description_match))/2 + self.full_column_mask
     column_softmax = tf.nn.softmax(column_logits)  #batch_size * max_cols
     return column_softmax
 
