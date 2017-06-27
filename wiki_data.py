@@ -531,7 +531,7 @@ class WikiQuestionGenerator(object):
             pos_tags = nltk.pos_tag(entry)
             new_entry = []
             for t in pos_tags:
-              if t[0] != 'UNK' and  t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
+              if t[0] not in ['UNK', 'is', 'are']  and t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
                 new_entry.append(t[0])
             print("Processing column descriptions:")
             print("       Old entry:", entry)
