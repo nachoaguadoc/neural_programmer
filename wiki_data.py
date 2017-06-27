@@ -328,7 +328,7 @@ class WikiQuestionGenerator(object):
 
   def load_custom_data(self):
     self.custom_tables = {}
-    self.custom_tables['csv/204-csv/custom-1-baseline.csv'] = []
+    self.custom_tables['csv/204-csv/uefa.csv'] = []
     print "Custom examples loaded ", len(self.annotated_examples)
 
   def load_test_data(self, question_id, input, context):
@@ -530,7 +530,7 @@ class WikiQuestionGenerator(object):
             pos_tags = nltk.pos_tag(entry)
             new_entry = []
             for t in pos_tags:
-              if t[0] != 'UNK' and  t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
+              if t[0] not in ['UNK', 'is', 'are']  and t[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
                 new_entry.append(t[0])
             print("Processing column descriptions:")
             print("       Old entry:", entry)

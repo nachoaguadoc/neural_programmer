@@ -250,9 +250,9 @@ def Demo(graph, utility, sess, model_dir, dat):
       row = a[1][0]
       col = a[2]
       if col < 15:
-        list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+        list_answer = dat.custom_tables[table_key].number_columns[col][row]
       else:
-        list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+        list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
       if type(list_answer) == float:
         final_answer = str(list_answer)
       else:
