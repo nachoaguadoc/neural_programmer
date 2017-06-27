@@ -273,7 +273,8 @@ def DemoConsole(graph, utility, sess, model_dir, dat):
     table_key = raw_input("> What table do you want? \n")
     table_key = "csv/custom-csv/" + table_key + ".csv"
     while (True):
-      tokens = raw_input("       > ")
+      tokens = raw_input("> ")
+      print("\n")
       if tokens == 'new':
         break
       print("Question:", tokens, "Table:", table_key)
@@ -299,7 +300,8 @@ def DemoConsole(graph, utility, sess, model_dir, dat):
         else:
           for l in list_answer:
             final_answer += " " + str(l)
-      print "       > " + final_answer + "\n"
+      print("\n")
+      print "> " + final_answer + "\n"
       i += 1
 
 def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
