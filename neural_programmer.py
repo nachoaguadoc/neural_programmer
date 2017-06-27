@@ -157,6 +157,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
+  debugging = {'ops': [], 'cols': []}
   if (debug):
     steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
     ops = steps[0]['ops']
@@ -166,11 +167,17 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
       op_index = np.where(ops[i] == 1)[1][0]
       col_index = np.where(cols[i] == 1)[1][0]
       if col_index < 15:
-        col = data[0].number_column_names[col_index][0]
+        col = data[0].number_column_names[col_index]
       else:
-        col = data[0].word_column_names[col_index-15][0]
+        col = data[0].word_column_names[col_index-15]
       op = utility.operations_set[op_index]
-      print("Step" + str(i) + ": Operation " + op + " and Column " + col)
+      debugging['ops'].append(op)
+      col_name = ""
+      for c in col:
+        if c !='dummy_token':
+          col_name += c + " "
+      debugging['cols'].appendcol(col_name)
+      print("Step" + str(i) + ": Operation " + op + " and Column " + col_name)
     print("---------------------------------------")
 
   answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
@@ -191,9 +198,9 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
       lookup_answers.append([col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
       #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
   if return_scalar:
-    return (scalar_answer, 'scalar')
+    return ([scalar_answer, debugging], 'scalar')
   else:
-    return (lookup_answers, 'lookup')
+    return ([lookup_answers, debugging], 'lookup')
 
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
@@ -244,10 +251,12 @@ def Demo(graph, utility, sess, model_dir, dat):
     answer = get_prediction(sess, final_data, graph, utility)
     final_answer = ''
     if answer[1] == 'scalar':
-      final_answer = str(answer[0])
+      final_answer = str(answer[0][0])
+      debugging = str(answer[0][1])
     else:
       print(answer)
-      a = answer[0][0]
+      a = answer[0][0][0]
+      debugging = answer[0][1]
       row = a[1][0]
       col = a[2]
       if col < 15:
@@ -260,8 +269,11 @@ def Demo(graph, utility, sess, model_dir, dat):
         for l in list_answer:
           final_answer += " " + str(l)
     print("Answer:", final_answer)
+
+    result = {"answer": final_answer, "debugging": debugging}
+    result = str(result)
     i += 1
-    conn.send(final_answer.encode())
+    conn.send(result.encode())
     conn.close() 
 
 def DemoConsole(graph, utility, sess, model_dir, dat):
