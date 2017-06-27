@@ -47,6 +47,7 @@ tf.flags.DEFINE_float("learning_rate", 0.001, "")
 tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0, "weighting factor in the objective function")
 
+tf.flags.DEFINE_string("mode", "demo", """mode""")
 tf.flags.DEFINE_string("job_id", "_baseline", """job id""")
 tf.flags.DEFINE_string("model", "baseline", """model to evaluate""")
 tf.flags.DEFINE_string("output_dir", "model/embeddings/", """output_dir""")
@@ -263,6 +264,44 @@ def Demo(graph, utility, sess, model_dir, dat):
     conn.send(final_answer.encode())
     conn.close() 
 
+def DemoConsole(graph, utility, sess, model_dir, dat):
+  i = 0
+  print("Listening to incoming questions...")
+
+  while (True):
+    question_id = 'iac-' + str(i)
+    table_key = raw_input("> What table do you want? \n")
+    table_key = "csv/custom-csv/" + table_key + ".csv"
+    while (True):
+      tokens = raw_input("       > ")
+      if tokens == 'new':
+        break
+      print("Question:", tokens, "Table:", table_key)
+      example = dat.load_example(question_id, tokens, table_key)
+      data = [example]
+      data_utils.construct_vocab(data, utility, True)
+      final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
+      answer = get_prediction(sess, final_data, graph, utility)
+      final_answer = ''
+      if answer[1] == 'scalar':
+        final_answer = str(answer[0])
+      else:
+        print(answer)
+        a = answer[0][0]
+        row = a[1][0]
+        col = a[2]
+        if col < 15:
+          list_answer = dat.annotated_tables[table_key].number_columns[col][row]
+        else:
+          list_answer = dat.annotated_tables[table_key].word_columns[col-15][row]
+        if type(list_answer) == float:
+          final_answer = str(list_answer)
+        else:
+          for l in list_answer:
+            final_answer += " " + str(l)
+      print "       > " + final_answer + "\n"
+      i += 1
+
 def Test(graph, utility, batch_size, sess, model_dir, dat, file_name):
 
     ids, questions, table_keys, answers = wiki_data.load_custom_questions(file_name)
@@ -354,7 +393,10 @@ def master(train_data, dev_data, utility, dat):
       model_file = 'model_' + utility.FLAGS.model_id
       print("restoring: ", model_file)
       saver.restore(sess, model_dir + model_file)
-      Demo(graph, utility, sess, model_dir, dat)
+      if utility.FLAGS.mode == 'console':
+        DemoConsole(graph, utility, sess, model_dir, dat)
+      else:
+        Demo(graph, utility, sess, model_dir, dat)
 
       
 def main(args):

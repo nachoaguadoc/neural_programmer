@@ -328,7 +328,8 @@ class WikiQuestionGenerator(object):
 
   def load_custom_data(self):
     self.custom_tables = {}
-    self.custom_tables['csv/204-csv/custom-1-baseline.csv'] = []
+    self.custom_tables['csv/custom-csv/uefa.csv'] = []
+    self.custom_tables['csv/custom-csv/swisscom.csv'] = []
     print "Custom examples loaded ", len(self.annotated_examples)
 
   def load_test_data(self, question_id, input, context):
