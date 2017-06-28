@@ -260,17 +260,22 @@ def Demo(graph, utility, sess, model_dir, dat):
       print(answer)
       a = answer[0][0][0]
       debugging = answer[0][1]
-      row = a[1][0]
+      rows = a[1]
       col = a[2]
-      if col < 15:
-        list_answer = dat.custom_tables[table_key].number_columns[col][row]
-      else:
-        list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
-      if type(list_answer) == float:
-        final_answer = str(list_answer)
-      else:
-        for l in list_answer:
-          final_answer += " " + str(l)
+      rows_answer = []
+      row_answer = ''
+      for row in rows:
+        if col < 15:
+          list_answer = dat.custom_tables[table_key].number_columns[col][row]
+        else:
+          list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
+        if type(list_answer) == float:
+          row_answer = str(list_answer)
+        else:
+          for l in list_answer:
+            row_answer += " " + str(l)
+        rows_answer.append(row_answer)
+      final_answer = ','.join(rows_answer)
     print("Answer:", final_answer)
 
     result = {"answer": final_answer, "debugging": debugging}
