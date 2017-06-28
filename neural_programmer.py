@@ -157,7 +157,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
-  debugging = {'ops': [], 'cols': []}
+  debugging = {'ops': [], 'cols': [], 'rows': []}
   if (debug):
     steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
     ops = steps[0]['ops']
