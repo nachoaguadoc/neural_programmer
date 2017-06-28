@@ -263,8 +263,8 @@ def Demo(graph, utility, sess, model_dir, dat):
       rows = a[1]
       col = a[2]
       rows_answer = []
-      row_answer = ''
       for row in rows:
+        row_answer = ''
         if col < 15:
           list_answer = dat.custom_tables[table_key].number_columns[col][row]
         else:
