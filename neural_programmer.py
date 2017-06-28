@@ -167,7 +167,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     for i in range(len(ops)):
       op_index = np.where(ops[i] == 1)[1][0]
       col_index = np.where(cols[i] == 1)[1][0]
-      row_index =  np.where(rows[i] == 1)[1]
+      row_index =  str(np.where(rows[i] == 1)[1])
       if col_index < 15:
         col = data[0].number_column_names[col_index]
       else:
@@ -180,7 +180,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
         if c !='dummy_token':
           col_name += c + " "
       debugging['cols'].append(col_name)
-      print("Step" + str(i) + ": Operation " + op + ", Column " + col_name + " and Rows: ", str(row_index))
+      print("Step" + str(i) + ": Operation " + op + ", Column " + col_name + " and Rows: ", row_index)
     print("---------------------------------------")
 
   answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
