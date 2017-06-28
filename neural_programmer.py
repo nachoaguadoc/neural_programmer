@@ -162,8 +162,10 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
     ops = steps[0]['ops']
     cols = steps[0]['cols']
+    rows = steps[0]['rows']
     print("------------- Debugging step by step -------------")
     for i in range(len(ops)):
+      print(rows[i])
       op_index = np.where(ops[i] == 1)[1][0]
       col_index = np.where(cols[i] == 1)[1][0]
       if col_index < 15:

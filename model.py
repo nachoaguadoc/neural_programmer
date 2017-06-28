@@ -25,6 +25,8 @@ class Graph():
   def __init__(self, utility, batch_size, max_passes, mode="train"):
     self.debug_ops = []
     self.debug_cols = []
+    self.debug_rows = []
+
     self.utility = utility
     self.data_type = self.utility.tf_data_type[self.utility.FLAGS.data_type]
     self.max_elements = self.utility.FLAGS.max_elements
@@ -240,7 +242,7 @@ class Graph():
     self.full_column_hidden_vectors += self.summary_text_entry_embeddings
     self.full_column_hidden_vectors = nn_utils.apply_dropout(
         self.full_column_hidden_vectors, self.utility.FLAGS.dropout, self.mode)
-    column_logits = tf.reduce_sum(column_controller_vector * self.full_column_hidden_vectors, 2) + ((self.params["word_match_feature_column_name"] * self.batch_column_exact_match) + (self.params["word_match_feature_column_name"]* self.batch_column_description_match))/2 + self.full_column_mask
+    column_logits = tf.reduce_sum(column_controller_vector * self.full_column_hidden_vectors, 2) + ((self.params["word_match_feature_column_name"] * self.batch_column_exact_match) + (self.params["word_match_feature_column_name"]* self.batch_column_description_match))/1 + self.full_column_mask
     column_softmax = tf.nn.softmax(column_logits)  #batch_size * max_cols
     return column_softmax
 
@@ -435,6 +437,7 @@ class Graph():
 
     output, select = self.perform_operations(softmax, full_column_softmax,
                                              select, prev_select_1, curr_pass)
+    self.debug_rows.append(select)
     return output, select, softmax, soft_softmax, full_column_softmax, soft_column_softmax
 
   def compute_lookup_error(self, val):
@@ -592,7 +595,7 @@ class Graph():
   def get_answers(self):
     return (self.scalar_output, self.batch_lookup_answer)  
   def get_steps(self):
-    debug = {'ops': self.debug_ops, 'cols': self.debug_cols}
+    debug = {'ops': self.debug_ops, 'cols': self.debug_cols, 'rows': self.debug_rows}
     return debug
   def compute_error(self):
     #Sets mask variables and performs batch processing
