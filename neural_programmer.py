@@ -178,7 +178,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
       for c in col:
         if c !='dummy_token':
           col_name += c + " "
-      debugging['cols'].appendcol(col_name)
+      debugging['cols'].append(col_name)
       print("Step" + str(i) + ": Operation " + op + " and Column " + col_name)
     print("---------------------------------------")
 
@@ -299,10 +299,11 @@ def DemoConsole(graph, utility, sess, model_dir, dat):
       answer = get_prediction(sess, final_data, graph, utility)
       final_answer = ''
       if answer[1] == 'scalar':
-        final_answer = str(answer[0])
+        final_answer = str(answer[0][0])
+        debugging = str(answer[0][1])
       else:
         print(answer)
-        a = answer[0][0]
+        a = answer[0][0][0]
         row = a[1][0]
         col = a[2]
         if col < 15:
