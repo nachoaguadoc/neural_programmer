@@ -165,7 +165,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
   rows = steps[0]['rows']
   soft_ops = steps[0]['soft_ops']
   soft_cols = steps[0]['soft_cols']
-  certainty = 1
+  certainty = 0
   print("------------- Debugging step by step -------------")
   for i in range(len(ops)):
     op_index = np.where(ops[i] == 1)[1][0]
@@ -197,10 +197,6 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
   print("CERTAINTY: " + str(certainty))
   print("---------------------------------------")
 
-  if (certainty < FLAGS.certainty_threshold):
-    print("Answer unknown")
-    return (["I'm afraid I don't know the answer to that question", debugging], 'error')
-
   answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
   scalar_answer = answers[0][0][0]
   lookup_answer = answers[0][1][0]
@@ -218,10 +214,11 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
         col_name = data[j].word_column_names[col-15]
       lookup_answers.append([col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
       #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
+
   if return_scalar:
-    return ([scalar_answer, debugging], 'scalar')
+    return ([scalar_answer, debugging], 'scalar', certainty)
   else:
-    return ([lookup_answers, debugging], 'lookup')
+    return ([lookup_answers, debugging], 'lookup', certainty)
 
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
@@ -272,10 +269,9 @@ def Demo(graph, utility, sess, model_dir, dat):
     answer = get_prediction(sess, final_data, graph, utility)
     final_answer = ''
 
-    if answer[1] == 'error':
-      final_answer = answer[0][0]
-      debugging = str(answer[0][1])
-    elif answer[1] == 'scalar':
+    certainty = answer[2]
+
+    if answer[1] == 'scalar':
       final_answer = str(answer[0][0])
       debugging = str(answer[0][1])
     else:
@@ -298,7 +294,12 @@ def Demo(graph, utility, sess, model_dir, dat):
             row_answer += " " + str(l)
         rows_answer.append(row_answer)
       final_answer = ','.join(rows_answer)
-    print("Answer:", final_answer)
+
+    print("Answer:", final_answer + "\n")
+
+    if (certainty < FLAGS.certainty_threshold):
+      print("I do not know the answer to your question, although that would be my guess.")
+      final_answer = "I am sorry, cannot give you an answer to that question"
 
     result = {"answer": final_answer, "debugging": debugging}
     result = str(result)
@@ -327,11 +328,9 @@ def DemoConsole(graph, utility, sess, model_dir, dat):
       answer = get_prediction(sess, final_data, graph, utility)
       final_answer = ''
 
-      if answer[1] == 'error':
-        final_answer = answer[0][0]
-        debugging = str(answer[0][1])
+      certainty = answer[2]
 
-      elif answer[1] == 'scalar':
+      if answer[1] == 'scalar':
         final_answer = str(answer[0][0])
         debugging = str(answer[0][1])
       else:
@@ -348,7 +347,10 @@ def DemoConsole(graph, utility, sess, model_dir, dat):
         else:
           for l in list_answer:
             final_answer += " " + str(l)
+
       print("\n")
+      if (certainty < FLAGS.certainty_threshold):
+        print("> I do not know the answer to your question, although I would say..." + "\n")
       print "> " + final_answer + "\n"
       i += 1
 
