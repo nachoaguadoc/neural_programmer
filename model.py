@@ -26,6 +26,8 @@ class Graph():
     self.debug_ops = []
     self.debug_cols = []
     self.debug_rows = []
+    self.debug_soft_ops = []
+    self.debug_soft_cols = []
 
     self.utility = utility
     self.data_type = self.utility.tf_data_type[self.utility.FLAGS.data_type]
@@ -430,6 +432,8 @@ class Graph():
                                                       curr_pass)
     soft_column_softmax = full_column_softmax
     if (self.mode == "test" or self.mode == "demo"):
+      self.debug_soft_ops.append(softmax)
+      self.debug_soft_cols.append(full_column_softmax)  
       full_column_softmax = self.make_hard_softmax(full_column_softmax)
       softmax = self.make_hard_softmax(softmax)
       self.debug_ops.append(softmax)
@@ -594,9 +598,11 @@ class Graph():
   
   def get_answers(self):
     return (self.scalar_output, self.batch_lookup_answer)  
+
   def get_steps(self):
-    debug = {'ops': self.debug_ops, 'cols': self.debug_cols, 'rows': self.debug_rows}
+    debug = {'ops': self.debug_ops, 'cols': self.debug_cols, 'rows': self.debug_rows, 'soft_ops': self.debug_soft_ops, 'soft_cols': self.debug_soft_cols}
     return debug
+    
   def compute_error(self):
     #Sets mask variables and performs batch processing
     self.batch_gold_select = self.batch_print_answer > 0.0

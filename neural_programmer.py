@@ -163,11 +163,15 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     ops = steps[0]['ops']
     cols = steps[0]['cols']
     rows = steps[0]['rows']
+    soft_ops = steps[0]['soft_ops']
+    soft_cols = steps[0]['soft_cols']
     print("------------- Debugging step by step -------------")
     for i in range(len(ops)):
       op_index = np.where(ops[i] == 1)[1][0]
       col_index = np.where(cols[i] == 1)[1][0]
       row_index =  str(np.where(rows[i] == 1)[1])
+      print("Column Distribution: ", soft_cols[i])
+      print("Operation Distribution: ", soft_ops[i])
       if col_index < 15:
         col = data[0].number_column_names[col_index]
       else:
