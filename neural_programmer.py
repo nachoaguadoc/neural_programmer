@@ -46,6 +46,7 @@ tf.flags.DEFINE_float("param_init", 0.1, "")
 tf.flags.DEFINE_float("learning_rate", 0.001, "")
 tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0, "weighting factor in the objective function")
+tf.flags.DEFINE_float("certainty_threshold", 70.0, "")
 
 tf.flags.DEFINE_string("mode", "demo", """mode""")
 tf.flags.DEFINE_string("job_id", "_baseline", """job id""")
@@ -157,35 +158,50 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
-  debugging = {'ops': [], 'cols': [], 'rows': []}
-  if (debug):
-    steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
-    ops = steps[0]['ops']
-    cols = steps[0]['cols']
-    rows = steps[0]['rows']
-    soft_ops = steps[0]['soft_ops']
-    soft_cols = steps[0]['soft_cols']
-    print("------------- Debugging step by step -------------")
-    for i in range(len(ops)):
-      op_index = np.where(ops[i] == 1)[1][0]
-      col_index = np.where(cols[i] == 1)[1][0]
-      row_index =  str(np.where(rows[i] == 1)[1])
-      print("Column Distribution: ", soft_cols[i])
-      print("Operation Distribution: ", soft_ops[i])
-      if col_index < 15:
-        col = data[0].number_column_names[col_index]
-      else:
-        col = data[0].word_column_names[col_index-15]
-      op = utility.operations_set[op_index]
-      debugging['ops'].append(op)
-      debugging['rows'].append(row_index)
-      col_name = ""
-      for c in col:
-        if c !='dummy_token':
-          col_name += c + " "
-      debugging['cols'].append(col_name)
-      print("Step" + str(i) + ": Operation " + op + ", Column " + col_name + " and Rows: ", row_index)
-    print("---------------------------------------")
+  debugging = {'ops': [], 'cols': [], 'rows': [], 'ops_soft': [], 'cols_soft': []}
+  steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
+  ops = steps[0]['ops']
+  cols = steps[0]['cols']
+  rows = steps[0]['rows']
+  soft_ops = steps[0]['soft_ops']
+  soft_cols = steps[0]['soft_cols']
+  certainty = 1
+  print("------------- Debugging step by step -------------")
+  for i in range(len(ops)):
+    op_index = np.where(ops[i] == 1)[1][0]
+    col_index = np.where(cols[i] == 1)[1][0]
+    row_index =  str(np.where(rows[i] == 1)[1])
+    print("Column Distribution: ", soft_cols[i])
+    print("Operation Distribution: ", soft_ops[i])
+    if col_index < 15:
+      col = data[0].number_column_names[col_index]
+    else:
+      col = data[0].word_column_names[col_index-15]
+    op = utility.operations_set[op_index]
+    debugging['ops'].append(op)
+    debugging['rows'].append(row_index)
+    col_name = ""
+    for c in col:
+      if c !='dummy_token':
+        col_name += c + " "
+    debugging['cols'].append(col_name)
+
+    certainty_ops = soft_ops[i][0][op_index]
+    certainty_cols = soft_cols[i][0][col_index]
+    
+    # Append here certainties to debugging {} if necessary for the client
+
+    certainty_step = certainty_ops * certainty_cols
+    certainty *= certainty_step
+    print("Cerainty step: " + str(certainty_step) + " with cols: " + str(certainty_cols) + " certainty ops: " + str(certainty_ops))
+    print("Step" + str(i) + ": Operation " + op + ", Column " + col_name + " and Rows: ", row_index)
+  certainty *= 100
+  print("CERTAINTY: " + str(certainty))
+  print("---------------------------------------")
+
+  if (certainty < FLAGS.certainty_threshold):
+    print("Answer unknown")
+    return (["I'm afraid I don't know the answer to that question", debugging], 'error')
 
   answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
   scalar_answer = answers[0][0][0]
@@ -257,7 +273,11 @@ def Demo(graph, utility, sess, model_dir, dat):
     final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
     answer = get_prediction(sess, final_data, graph, utility)
     final_answer = ''
-    if answer[1] == 'scalar':
+
+    if answer[1] == 'error':
+      final_answer = answer[0][0]
+      debugging = str(answer[0][1])
+    elif answer[1] == 'scalar':
       final_answer = str(answer[0][0])
       debugging = str(answer[0][1])
     else:
@@ -308,7 +328,12 @@ def DemoConsole(graph, utility, sess, model_dir, dat):
       final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
       answer = get_prediction(sess, final_data, graph, utility)
       final_answer = ''
-      if answer[1] == 'scalar':
+
+      if answer[1] == 'error':
+        final_answer = answer[0][0]
+        debugging = str(answer[0][1])
+
+      elif answer[1] == 'scalar':
         final_answer = str(answer[0][0])
         debugging = str(answer[0][1])
       else:
