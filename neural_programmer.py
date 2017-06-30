@@ -171,8 +171,6 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     op_index = np.where(ops[i] == 1)[1][0]
     col_index = np.where(cols[i] == 1)[1][0]
     row_index =  str(np.where(rows[i] == 1)[1])
-    print("Column Distribution: ", soft_cols[i])
-    print("Operation Distribution: ", soft_ops[i])
     if col_index < 15:
       col = data[0].number_column_names[col_index]
     else:
@@ -192,10 +190,10 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     # Append here certainties to debugging {} if necessary for the client
 
     certainty_step = certainty_ops * certainty_cols
-    certainty *= certainty_step
-    print("Cerainty step: " + str(certainty_step) + " with cols: " + str(certainty_cols) + " certainty ops: " + str(certainty_ops))
+    certainty += certainty_step
+    print("Certainty step: " + str(certainty_step) + " with cols: " + str(certainty_cols) + " certainty ops: " + str(certainty_ops))
     print("Step" + str(i) + ": Operation " + op + ", Column " + col_name + " and Rows: ", row_index)
-  certainty *= 100
+  certainty = (certainty / len(ops)) * 100
   print("CERTAINTY: " + str(certainty))
   print("---------------------------------------")
 
