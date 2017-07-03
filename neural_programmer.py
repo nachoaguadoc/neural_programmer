@@ -422,11 +422,11 @@ def master(train_data, dev_data, utility, dat):
         for model_file in file_list:
           model_file = model_file[1]
           print "restoring: ", model_file
-          saver.restore(sess, model_dir + "/" + model_file)
+          saver.restore(sess, model_dir + model_file)
           model_step = int(
               model_file.split("_")[len(model_file.split("_")) - 1])
           print "evaluating on dev ", model_file, model_step
-          (sess, dev_data, batch_size, graph, model_step)
+          evaluate(sess, dev_data, batch_size, graph, model_step)
 
     elif (key == 'train'):
       ckpt = tf.train.get_checkpoint_state(model_dir)
@@ -469,7 +469,7 @@ def main(args):
   data_utils.perform_word_cutoff(utility)
   #convert data to int format and pad the inputs
   train_data = data_utils.complete_wiki_processing(train_data, utility, 'train')
-  dev_data = data_utils.complete_wiki_processing(dev_data, utility, 'test')
+  dev_data = data_utils.complete_wiki_processing(dev_data, utility, 'error-test')
 
   #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
   print("# train examples ", len(train_data))

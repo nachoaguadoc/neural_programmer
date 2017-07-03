@@ -534,7 +534,7 @@ def complete_wiki_processing(data, utility, key='train'):
       example.exact_column_match = example.number_column_exact_match + example.word_column_exact_match
       example.exact_column_description_match = example.number_column_description_match + example.word_column_description_match
       #answer and related mask, padding
-      if (train and example.is_lookup):
+      if ((train and example.is_lookup) or (key=='error-test' and example.is_lookup)):
         example.answer = example.calc_answer
         example.number_print_answer = example.number_lookup_matrix.tolist()
         example.word_print_answer = example.word_lookup_matrix.tolist()
@@ -553,7 +553,7 @@ def complete_wiki_processing(data, utility, key='train'):
           example.word_print_answer.append([0.0] * utility.FLAGS.max_elements)
         example.print_answer = example.number_print_answer + example.word_print_answer
 
-      elif (train):
+      elif (train or key=='error-test'):
         example.answer = example.calc_answer
         example.print_answer = [[0.0] * (utility.FLAGS.max_elements)] * (utility.FLAGS.max_number_cols + utility.FLAGS.max_word_cols)
       else:
