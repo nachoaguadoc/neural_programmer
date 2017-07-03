@@ -123,6 +123,7 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
     for i in range(batch_size):
       scalar_answer = predictions[0][i]
       lookup_answer = predictions[1][i]
+
       return_scalar = True
       lookup_answers = []
       j = 0
@@ -134,11 +135,11 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
           else:
             col_name = data[j].word_column_names[col-15]
           lookup_answers.append([[i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
-          #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
+
       if return_scalar:
         final_predictions.append(str(int(scalar_answer)))
       else:
-        for a in lookup_answers:
+          a = lookup_answers[0]:
           rows = a[0]
           col = a[1]
           rows_answer = []
@@ -153,10 +154,15 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
             else:
               for l in list_answer:
                 row_answer += " " + str(l)
-              row_answer = final_answer[1:]
-              rows_answer.append(row_answer)
+            rows_answer.append(row_answer)
+
           final_answer = ','.join(rows_answer)
+
+          if final_answer[0] == ' ':
+            final_answer = final_answer[1:]
+
         final_predictions.append(final_answer)
+
   return final_predictions
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
@@ -404,7 +410,7 @@ def master(train_data, dev_data, utility, dat):
       model_file = 'model_' + utility.FLAGS.model_id
       print("restoring: ", model_file)
       saver.restore(sess, model_dir + model_file)
-      Test(graph, utility, batch_size, sess, model_dir, dat, 'data/data/uefa.examples')  
+      Test(graph, utility, batch_size, sess, model_dir, dat, 'data/custom/uefa.examples')
     if (key == 'error-test'):
       while True:
         selected_models = {}
