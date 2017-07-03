@@ -150,7 +150,7 @@ class Graph():
                                 tf.transpose(self.batch_ordinal_question_one), 2
                             ), [1, 1, self.utility.FLAGS.embedding_dims]), 0))))
       question_number_softmax = tf.nn.softmax(tf.concat(axis=1, values=[first, second]))
-      if (self.mode == "test" or self.mode == "demo"):
+      if (self.mode == "test" or self.mode == "error-test" or self.mode == "demo"):
         cond = tf.equal(question_number_softmax,
                         tf.reshape(
                             tf.reduce_max(question_number_softmax, 1),
@@ -431,7 +431,7 @@ class Graph():
     full_column_softmax = self.compute_column_softmax(column_controller_vector,
                                                       curr_pass)
     soft_column_softmax = full_column_softmax
-    if (self.mode == "test" or self.mode == "demo"):
+    if (self.mode == "test" or self.mode == "error-test" or self.mode == "demo"):
       self.debug_soft_ops.append(softmax)
       self.debug_soft_cols.append(full_column_softmax)  
       full_column_softmax = self.make_hard_softmax(full_column_softmax)
