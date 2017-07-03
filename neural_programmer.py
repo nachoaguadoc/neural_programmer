@@ -139,27 +139,27 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
       if return_scalar:
         final_predictions.append(str(int(scalar_answer)))
       else:
-          a = lookup_answers[0]:
-          rows = a[0]
-          col = a[1]
-          rows_answer = []
-          for row in rows:
-            row_answer = ''
-            if col < 15:
-              list_answer = dat.custom_tables[table_key].number_columns[col][row]
-            else:
-              list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
-            if type(list_answer) == float:
-              row_answer = str(int(list_answer))
-            else:
-              for l in list_answer:
-                row_answer += " " + str(l)
-            rows_answer.append(row_answer)
+        a = lookup_answers[0]
+        rows = a[0]
+        col = a[1]
+        rows_answer = []
+        for row in rows:
+          row_answer = ''
+          if col < 15:
+            list_answer = dat.custom_tables[table_key].number_columns[col][row]
+          else:
+            list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
+          if type(list_answer) == float:
+            row_answer = str(int(list_answer))
+          else:
+            for l in list_answer:
+              row_answer += " " + str(l)
+          rows_answer.append(row_answer)
 
-          final_answer = ','.join(rows_answer)
+        final_answer = ','.join(rows_answer)
 
-          if final_answer[0] == ' ':
-            final_answer = final_answer[1:]
+        if final_answer[0] == ' ':
+          final_answer = final_answer[1:]
 
         final_predictions.append(final_answer)
 
