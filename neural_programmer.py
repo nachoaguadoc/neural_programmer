@@ -141,18 +141,21 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
         for a in lookup_answers:
           rows = a[0]
           col = a[1]
+          rows_answer = []
           for row in rows:
-            final_answer = ''
+            row_answer = ''
             if col < 15:
               list_answer = dat.custom_tables[table_key].number_columns[col][row]
             else:
               list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
             if type(list_answer) == float:
-              final_answer = str(int(list_answer))
+              row_answer = str(int(list_answer))
             else:
               for l in list_answer:
-                final_answer += " " + str(l)
-              final_answer = final_answer[1:]
+                row_answer += " " + str(l)
+              row_answer = final_answer[1:]
+              rows_answer.append(row_answer)
+          final_answer = ','.join(rows_answer)
         final_predictions.append(final_answer)
   return final_predictions
 
@@ -401,7 +404,7 @@ def master(train_data, dev_data, utility, dat):
       model_file = 'model_' + utility.FLAGS.model_id
       print("restoring: ", model_file)
       saver.restore(sess, model_dir + model_file)
-      Test(graph, utility, batch_size, sess, model_dir, dat, 'data/data/package.examples')  
+      Test(graph, utility, batch_size, sess, model_dir, dat, 'data/data/uefa.examples')  
     if (key == 'error-test'):
       while True:
         selected_models = {}
