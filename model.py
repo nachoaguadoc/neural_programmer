@@ -362,7 +362,7 @@ class Graph():
     select_group_by_max = tf.reduce_sum(self.batch_group_by_max *
                                         select_full_column_softmax, 1)
     length_content = 1
-    length_select = 13
+    length_select = 9
     length_print = 1
     values = tf.concat(axis=1, values=[count])
     softmax_content = tf.slice(softmax, [0, 0],
