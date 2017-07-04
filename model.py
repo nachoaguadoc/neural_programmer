@@ -385,8 +385,8 @@ class Graph():
     softmax_select = tf.slice(softmax, [0, length_content],
                               [self.batch_size, length_select])
     select_lists = [
-        tf.expand_dims(select_prev, 1), tf.expand_dims(select_next, 1),
-        tf.expand_dims(select_first_rs, 1), tf.expand_dims(select_last_rs, 1),
+        #tf.expand_dims(select_prev, 1), tf.expand_dims(select_next, 1),
+        #tf.expand_dims(select_first_rs, 1), tf.expand_dims(select_last_rs, 1),
         tf.expand_dims(select_group_by_max, 1),
         tf.expand_dims(select_greater, 1), tf.expand_dims(select_lesser, 1),
         tf.expand_dims(select_geq, 1), tf.expand_dims(select_leq, 1),
