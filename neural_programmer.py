@@ -88,10 +88,7 @@ class Utility:
     self.np_data_type = {}
     self.np_data_type["double"] = np.float64
     self.np_data_type["float"] = np.float32
-    self.operations_set = ["count"] + [
-        "prev", "next", "first_rs", "last_rs", "group_by_max", "greater",
-        "lesser", "geq", "leq", "max", "min", "word-match"
-    ] + ["reset_select"] + ["print"]
+    self.operations_set = ["count"] + ["group_by_max", "greater", "lesser", "geq", "leq", "max", "min", "word-match"] + ["reset_select"] + ["print"]
     self.word_ids = {}
     self.reverse_word_ids = {}
     self.word_count = {}

@@ -347,16 +347,16 @@ class Graph():
                                1)  #BS * max_elements
     select_min = tf.reduce_sum(init_min * select_full_column_softmax,
                                1)  #BS * max_elements
-    select_prev = tf.concat(axis=1, values=[
-        tf.slice(select, [0, 1], [self.batch_size, self.max_elements - 1]),
-        tf.cast(tf.zeros([self.batch_size, 1]), self.data_type)
-    ])
-    select_next = tf.concat(axis=1, values=[
-        tf.cast(tf.zeros([self.batch_size, 1]), self.data_type), tf.slice(
-            select, [0, 0], [self.batch_size, self.max_elements - 1])
-    ])
-    select_last_rs = self.compute_first_or_last(select, False)
-    select_first_rs = self.compute_first_or_last(select, True)
+    #select_prev = tf.concat(axis=1, values=[
+    #    tf.slice(select, [0, 1], [self.batch_size, self.max_elements - 1]),
+    #    tf.cast(tf.zeros([self.batch_size, 1]), self.data_type)
+    #])
+    #select_next = tf.concat(axis=1, values=[
+    #    tf.cast(tf.zeros([self.batch_size, 1]), self.data_type), tf.slice(
+    #        select, [0, 0], [self.batch_size, self.max_elements - 1])
+    #])
+    #select_last_rs = self.compute_first_or_last(select, False)
+    #select_first_rs = self.compute_first_or_last(select, True)
     select_word_match = tf.reduce_sum(self.batch_exact_match *
                                       select_full_column_softmax, 1)
     select_group_by_max = tf.reduce_sum(self.batch_group_by_max *
