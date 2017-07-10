@@ -345,8 +345,8 @@ def Demo(graph, utility, sess, model_dir, dat):
           row_answer = str(list_answer)
         else:
           for l in list_answer:
-            row_answer += str(l) + " "
-          debugging['answer_neural'].append(row_answer[:-1])
+            row_answer += " " + str(l)
+          debugging['answer_neural'].append(row_answer[1:])
         rows_answer.append(row_answer)
        
       final_answer = ','.join(rows_answer)
