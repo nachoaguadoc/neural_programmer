@@ -164,7 +164,16 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
 
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
+  debugging =  {
+    'answer_neural': '',
+    'cells_answer_neural': [],
+    'is_lookup_neural': True,
+    'steps': [],
+    'threshold': 0.0
+  }
+
   debugging = {'ops': [], 'cols': [], 'rows': [], 'ops_soft': [], 'cols_soft': []}
+
   steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
   ops = steps[0]['ops']
   cols = steps[0]['cols']
@@ -174,31 +183,51 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
   certainty = 0
   print("------------- Debugging step by step -------------")
   for i in range(len(ops)):
+    step =  {
+      'index': i,
+      'operation_index': 0
+      'operation_name': '',
+      'operation_softmax': 0,
+      'column_index': 0,
+      'column_name': '',
+      'column_softmax': 0
+      'rows': [],
+      'correct': True
+    }
+
     op_index = np.where(ops[i] == 1)[1][0]
+    op_name = utility.operations_set[op_index]
+    op_certainty = soft_ops[i][0][op_index]
+    step['operation_index'] = op_index
+    step['operation_name'] = op_name
+    step['operation_softmax'] = op_certainty
+
     col_index = np.where(cols[i] == 1)[1][0]
-    row_index =  str(np.where(rows[i] == 1)[1])
     if col_index < 15:
       col = data[0].number_column_names[col_index]
+      step['column_index'] = col_index
     else:
       col = data[0].word_column_names[col_index-15]
-    op = utility.operations_set[op_index]
-    debugging['ops'].append(op)
-    debugging['rows'].append(row_index)
+      step['column_index'] = col_index - 15
+
     col_name = ""
     for c in col:
       if c !='dummy_token':
         col_name += c + " "
-    debugging['cols'].append(col_name)
 
-    certainty_ops = soft_ops[i][0][op_index]
-    certainty_cols = soft_cols[i][0][col_index]
+    col_certainty = soft_cols[i][0][col_index]
+
+    step['column_name'] = col_name[:-1]
+    step['column_softmax'] = col_certainty
     
-    # Append here certainties to debugging {} if necessary for the client
+    row_index =  np.ndarray.tolistnp.where(rows[i] == 1)[1];
+    step['rows'] = row_index
+    debugging['steps'].append(step)
 
-    certainty_step = certainty_ops * certainty_cols
+    certainty_step = op_certainty * col_certainty
     certainty += certainty_step
-    print("Certainty step: " + str(certainty_step) + " with cols: " + str(certainty_cols) + " certainty ops: " + str(certainty_ops))
-    print("Step" + str(i) + ": Operation " + op + ", Column " + col_name + " and Rows: ", row_index)
+    print("Certainty step: " + str(certainty_step) + " with cols: " + str(col_certainty) + " certainty ops: " + str(op_certainty))
+    print("Step" + str(i) + ": Operation " + op_name + ", Column " + col_name + " and Rows: ", row_index)
   certainty = (certainty / len(ops)) * 100
   print("CERTAINTY: " + str(certainty))
   print("---------------------------------------")
@@ -215,15 +244,23 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     if not all(p == 0 for p in lookup_answer[col]):
       return_scalar = False
       if col < 15:
+        col_index = col
         col_name = data[j].number_column_names[col]
       else:
+        col_index = col-15
         col_name = data[j].word_column_names[col-15]
+
+      rows = [i for i, e in enumerate(lookup_answer[col]) if e != 0]
+      for r in rows:
+        debugging['cells_answer_neural'].append([r, col_index])
       lookup_answers.append([col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
       #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
 
   if return_scalar:
+    debugging['is_lookup_neural'] = False
     return ([scalar_answer, debugging], 'scalar', certainty)
   else:
+    debugging['is_lookup_neural'] = True
     return ([lookup_answers, debugging], 'lookup', certainty)
 
 def Train(graph, utility, batch_size, train_data, sess, model_dir,
@@ -294,18 +331,21 @@ def Demo(graph, utility, sess, model_dir, dat):
         else:
           list_answer = dat.custom_tables[table_key].word_columns[col-15][row]
         if type(list_answer) == float:
+          debugging['answer_neural'].append(list_answer)
           row_answer = str(list_answer)
         else:
           for l in list_answer:
-            row_answer += " " + str(l)
+            row_answer += str(l) + " "
+          debugging['answer_neural'].append(row_answer[:-1])
         rows_answer.append(row_answer)
+       
       final_answer = ','.join(rows_answer)
 
     print("Answer:", final_answer + "\n")
-
+    debugging['threshold'] = FLAGS.certainty_threshold
     if (certainty < FLAGS.certainty_threshold):
       print("I do not know the answer to your question, although that would be my guess.")
-      final_answer = "I am sorry, cannot give you an answer to that question"
+      final_answer = "I cannot answer that question with the information in the table."
 
     result = {"answer": final_answer, "debugging": debugging}
     result = str(result)
