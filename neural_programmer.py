@@ -248,7 +248,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
         col_index = data[0].number_column_indices[col]
         col_name = data[j].number_column_names[col]
       else:
-        col_index = data[0].word_column_indices[col]
+        col_index = data[0].word_column_indices[col-15]
         col_name = data[j].word_column_names[col-15]
       rows = [i for i, e in enumerate(lookup_answer[col]) if e != 0]
       for r in rows:
