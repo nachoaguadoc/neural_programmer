@@ -245,12 +245,11 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     if not all(p == 0 for p in lookup_answer[col]):
       return_scalar = False
       if col < 15:
-        col_index = col
+        col_index = data[0].number_column_indices[col]
         col_name = data[j].number_column_names[col]
       else:
-        col_index = col-15
+        col_index = data[0].word_column_indices[col]
         col_name = data[j].word_column_names[col-15]
-
       rows = [i for i, e in enumerate(lookup_answer[col]) if e != 0]
       for r in rows:
         debugging['cells_answer_neural'].append([r, col_index])
@@ -321,7 +320,6 @@ def Demo(graph, utility, sess, model_dir, dat):
       debugging = str(answer[0][1])
     else:
       print("Debugging in MODEL:")
-      print(answer)
       a = answer[0][0][0]
       debugging = answer[0][1]
       print(debugging)
