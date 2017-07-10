@@ -168,11 +168,17 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
   debugging =  {
+    'question': '',
+    'table_key': '',
+    'correct': True,
+    'threshold': 0.0,
+    'steps': [],
     'answer_neural': [],
     'cells_answer_neural': [],
     'is_lookup_neural': True,
-    'steps': [],
-    'threshold': 0.0
+    'answer_feedback': [],
+    'cells_answer_feedback': [],
+    'is_lookup_feedback': True
   }
 
   steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
