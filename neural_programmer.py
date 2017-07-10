@@ -178,7 +178,8 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     'is_lookup_neural': True,
     'answer_feedback': [],
     'cells_answer_feedback': [],
-    'is_lookup_feedback': True
+    'is_lookup_feedback': True,
+    'below_threshold': False
   }
 
   steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
@@ -354,6 +355,7 @@ def Demo(graph, utility, sess, model_dir, dat):
 
     if (certainty < FLAGS.certainty_threshold):
       print("I do not know the answer to your question, although that would be my guess.")
+      debugging['below_threshold'] = True
       final_answer = "I cannot answer that question with the information in the table."
 
     result = {"answer": final_answer, "debugging": debugging}
