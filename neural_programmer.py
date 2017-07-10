@@ -440,7 +440,10 @@ def master(train_data, dev_data, utility, dat):
   final_loss = 0.0
   final_accuracy = 0.0
   #start session
-  with tf.Session() as sess:
+  config = tf.ConfigProto()
+  config.gpu_options.allow_growth = True
+
+  with tf.Session(config=config) as sess:
     sess.run(init.name)
     sess.run(graph.init_op.name)
     to_save = params.copy()
