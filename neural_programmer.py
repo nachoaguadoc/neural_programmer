@@ -317,7 +317,8 @@ def Demo(graph, utility, sess, model_dir, dat):
 
     if answer[1] == 'scalar':
       final_answer = str(answer[0][0])
-      debugging = str(answer[0][1])
+      debugging = answer[0][1]
+      debugging['answer_neural'].append(int(answer[0][0]))
     else:
       print("Debugging in MODEL:")
       a = answer[0][0][0]
