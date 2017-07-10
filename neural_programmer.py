@@ -172,7 +172,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     'cells_answer_neural': [],
     'is_lookup_neural': True,
     'steps': [],
-    'threshold': []
+    'threshold': 0.0
   }
 
   steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
@@ -206,10 +206,10 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     col_index = np.where(cols[i] == 1)[1][0]
     if col_index < 15:
       col = data[0].number_column_names[col_index]
-      step['column_index'] = col_index
+      step['column_index'] = data[0].number_column_indices[col_index]
     else:
       col = data[0].word_column_names[col_index-15]
-      step['column_index'] = col_index - 15
+      step['column_index'] = data[0].word_column_indices[col_index-15]
 
     col_name = ""
     for c in col:
@@ -256,7 +256,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
         debugging['cells_answer_neural'].append([r, col_index])
       lookup_answers.append([col_name, [i for i, e in enumerate(lookup_answer[col]) if e != 0], col])
       #print("Column name:", col_name, ", Selection;", [i for i, e in enumerate(lookup_answer[col]) if e != 0])
-
+  debugging['threshold'] = FLAGS.certainty_threshold
   if return_scalar:
     debugging['is_lookup_neural'] = False
     return ([scalar_answer, debugging], 'scalar', certainty)
@@ -320,9 +320,11 @@ def Demo(graph, utility, sess, model_dir, dat):
       final_answer = str(answer[0][0])
       debugging = str(answer[0][1])
     else:
+      print("Debugging in MODEL:")
       print(answer)
       a = answer[0][0][0]
       debugging = answer[0][1]
+      print(debugging)
       rows = a[1]
       col = a[2]
       rows_answer = []
@@ -344,7 +346,7 @@ def Demo(graph, utility, sess, model_dir, dat):
       final_answer = ','.join(rows_answer)
 
     print("Answer:", final_answer + "\n")
-    debugging['threshold'].append(FLAGS.certainty_threshold)
+
     if (certainty < FLAGS.certainty_threshold):
       print("I do not know the answer to your question, although that would be my guess.")
       final_answer = "I cannot answer that question with the information in the table."

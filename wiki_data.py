@@ -713,6 +713,10 @@ class WikiQuestionGenerator(object):
     word_column_indices = table_info.word_column_indices
     example.word_columns = table_info.word_columns
     example.number_columns = table_info.number_columns
+
+    example.word_columns_indices = table_info.word_columns_indices
+    example.number_columns_indices = table_info.number_columns_indices
+
     example.word_column_names = table_info.word_column_names
     example.word_column_descriptions = table_info.word_column_descriptions
 
