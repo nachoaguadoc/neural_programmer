@@ -168,11 +168,11 @@ def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
 def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1):
 
   debugging =  {
-    'answer_neural': '',
+    'answer_neural': [],
     'cells_answer_neural': [],
     'is_lookup_neural': True,
     'steps': [],
-    'threshold': 0.0
+    'threshold': []
   }
 
   steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))
@@ -186,12 +186,12 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
   for i in range(len(ops)):
     step =  {
       'index': i,
-      'operation_index': 0
+      'operation_index': 0,
       'operation_name': '',
       'operation_softmax': 0,
       'column_index': 0,
       'column_name': '',
-      'column_softmax': 0
+      'column_softmax': 0,
       'rows': [],
       'correct': True
     }
@@ -221,7 +221,7 @@ def get_prediction(sess, data, graph, utility, debug=True, curr=0, batch_size=1)
     step['column_name'] = col_name[:-1]
     step['column_softmax'] = col_certainty
     
-    row_index =  np.ndarray.tolistnp.where(rows[i] == 1)[1];
+    row_index =  np.ndarray.tolist(np.where(rows[i] == 1)[1])
     step['rows'] = row_index
     debugging['steps'].append(step)
 
@@ -344,7 +344,7 @@ def Demo(graph, utility, sess, model_dir, dat):
       final_answer = ','.join(rows_answer)
 
     print("Answer:", final_answer + "\n")
-    debugging['threshold'] = FLAGS.certainty_threshold
+    debugging['threshold'].append(FLAGS.certainty_threshold)
     if (certainty < FLAGS.certainty_threshold):
       print("I do not know the answer to your question, although that would be my guess.")
       final_answer = "I cannot answer that question with the information in the table."
