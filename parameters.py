@@ -37,12 +37,13 @@ class Parameters:
 
     if self.pretrain_emb == 'glove':
         import cPickle as pickle
-        temp = pickle.load(self.utility.FLAGS.embeddings_pickle)
-        params['word'] = tf.get_variable(
-            name='pretrained_embedding',
-            initializer=tf.constant_initializer(temp),
-            trainable=False
-        )
+        with open(self.utility.FLAGS.embeddings_pickle, 'r') as f: 
+          temp = pickle.load(f)
+          params['word'] = tf.get_variable(
+              name='pretrained_embedding',
+              initializer=tf.constant_initializer(temp),
+              trainable=False
+          )
     elif self.pretrain_emb == 'custom':
         params["word"] = tf.Variable(
             self.RandomUniformInit([utility.FLAGS.vocab_size, embedding_dims]))

@@ -30,7 +30,7 @@ def construct_vocab(data, utility, add_word=False):
 
     if (utility.FLAGS.word_embeddings == 'glove'):
       if (add_word):
-          continue
+        pass
       with open(utility.FLAGS.embeddings_file) as f:
         lines = f.readlines()
         index = 0
