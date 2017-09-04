@@ -76,6 +76,7 @@ def construct_vocab(data, utility, add_word=False):
               if (isinstance(word, numbers.Number)):
                 number_found += 1
               else:
+                if (utility.word_ids.has_key(word)):
                   utility.word_count[word] += 1 
 
     elif (utility.FLAGS.word_embeddings == 'custom'):  
