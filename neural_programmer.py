@@ -38,7 +38,7 @@ tf.flags.DEFINE_integer("question_length", 62, "maximum question length")
 tf.flags.DEFINE_integer("max_entry_length", 3, "")
 tf.flags.DEFINE_integer("max_passes", 2, "number of operation passes")
 tf.flags.DEFINE_integer("embedding_dims", 256, "")
-tf.flags.DEFINE_integer("batch_size", 1, "")
+tf.flags.DEFINE_integer("batch_size", 20, "")
 
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
 tf.flags.DEFINE_float("eps", 1e-6, "")

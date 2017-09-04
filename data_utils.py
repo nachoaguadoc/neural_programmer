@@ -27,18 +27,20 @@ def return_index(a):
       return i
 
 def construct_vocab(data, utility, add_word=False):
+
     if (utility.FLAGS.word_embeddings == 'glove'):
+      if (add_word):
+          continue
       with open(utility.FLAGS.embeddings_file) as f:
         lines = f.readlines()
-        if type=='glove':
-          index = 0
-          for l in lines:
-            word = l.split(' ')[0]
-            utility.word_ids[word] = index
-            utility.reverse_word_ids[index] = word
-            utility.word_count[word] = 0
-            utility.words.append(word)
-            index += 1
+        index = 0
+        for l in lines:
+          word = l.split(' ')[0]
+          utility.word_ids[word] = index
+          utility.reverse_word_ids[index] = word
+          utility.word_count[word] = 0
+          utility.words.append(word)
+          index += 1
 
       ans = []
       for example in data:
