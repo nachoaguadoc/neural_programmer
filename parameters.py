@@ -41,7 +41,7 @@ class Parameters:
           temp = pickle.load(f)
           params['word'] = tf.get_variable(
               name='pretrained_embedding',
-              initializer=tf.constant_initializer(temp),
+              initializer=tf.constant(temp),
               trainable=False
           )
     elif self.pretrain_emb == 'custom':
