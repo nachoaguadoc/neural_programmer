@@ -530,7 +530,7 @@ def main(args):
   data_utils.construct_vocab(dev_data, utility, True)
   data_utils.construct_vocab(test_data, utility, True)
   data_utils.add_special_words(utility)
-  data_utils.perform_word_cutoff(utility)
+  #data_utils.perform_word_cutoff(utility)
   #convert data to int format and pad the inputs
   train_data = data_utils.complete_wiki_processing(train_data, utility, 'train')
   dev_data = data_utils.complete_wiki_processing(dev_data, utility, 'error-test')
