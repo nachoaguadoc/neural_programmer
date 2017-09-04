@@ -22,12 +22,13 @@ import tensorflow as tf
 class Parameters:
 
   def __init__(self, u):
-    self.pretrain_emb = self.utility.FLAGS.word_embeddings
+    self.pretrain_emb = None
     self.utility = u
     self.init_seed_counter = 0
     self.word_init = {}
 
   def parameters(self, utility):
+    self.pretrain_emb = self.utility.FLAGS.word_embeddings 
     params = {}
     inits = []
     embedding_dims = self.utility.FLAGS.embedding_dims
@@ -39,7 +40,7 @@ class Parameters:
         temp = pickle.load(self.utility.FLAGS.embeddings_pickle)
         params['word'] = tf.get_variable(
             name='pretrained_embedding',
-            initializer=tf.constant_initializer(temp)
+            initializer=tf.constant_initializer(temp),
             trainable=False
         )
     elif self.pretrain_emb == 'custom':
