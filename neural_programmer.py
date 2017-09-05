@@ -102,15 +102,16 @@ def evaluate(sess, data, batch_size, graph, i):
   #computes accuracy
   num_examples = 0.0
   gc = 0.0
+
   for j in range(0, len(data) - batch_size + 1, batch_size):
     [ct] = sess.run([graph.final_correct],
                     feed_dict=data_utils.generate_feed_dict(data, j, batch_size,
                                                             graph))
     gc += ct * batch_size
     num_examples += batch_size
-  print "dev set accuracy   after ", i, " : ", gc / num_examples
-  print num_examples, len(data)
-  print "--------"
+  accuracy = gc / num_examples
+  print "dev set accuracy   after ", i, " : ", accuracy
+  return accuracy
 
 def evaluate_custom(sess, data, answers, batch_size, graph, table_key, dat):
   #computes accuracy
@@ -278,6 +279,8 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
   train_set_loss = 0.0
   utility.random.shuffle(train_data)
   start = time.time()
+  training_loss = []
+  text_file = open(model_dir + "training_loss.txt", "w")
   for i in range(utility.FLAGS.train_steps):
     curr_step = i
     if (i > 0 and i % FLAGS.write_every == 0):
@@ -298,7 +301,10 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
       print("step ", i, " ", time_taken, " seconds ")
       start = end
       print(" printing train set loss: ", train_set_loss / utility.FLAGS.eval_cycle)
+      training_loss.append(train_set_loss / utility.FLAGS.eval_cycle)
+      text_file.write(str(training_loss))
       train_set_loss = 0.0
+  text_file.close()
 
 def Demo(graph, utility, sess, model_dir, dat):
   i = 0
@@ -479,6 +485,7 @@ def master(train_data, dev_data, utility, dat):
         if (len(file_list) > 0):
           file_list = file_list[0:len(file_list) - 1]
         print "list of models: ", file_list
+        testing_accuracy = []
         for model_file in file_list:
           model_file = model_file[1]
           print "restoring: ", model_file
@@ -486,7 +493,13 @@ def master(train_data, dev_data, utility, dat):
           model_step = int(
               model_file.split("_")[len(model_file.split("_")) - 1])
           print "evaluating on dev ", model_file, model_step
-          evaluate(sess, dev_data, batch_size, graph, model_step)
+          accuracy = evaluate(sess, dev_data, batch_size, graph, model_step)
+          testing_accuracy.append(accuracy)
+
+        text_file = open(model_dir + "testing_accuracy.txt", "w")
+        text_file.write(str(testing_accuracy))
+        text_file.close()
+        break
 
     elif (key == 'train'):
       ckpt = tf.train.get_checkpoint_state(model_dir)
