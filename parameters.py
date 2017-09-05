@@ -22,18 +22,32 @@ import tensorflow as tf
 class Parameters:
 
   def __init__(self, u):
+    self.pretrain_emb = None
     self.utility = u
     self.init_seed_counter = 0
     self.word_init = {}
 
   def parameters(self, utility):
+    self.pretrain_emb = self.utility.FLAGS.word_embeddings 
     params = {}
     inits = []
     embedding_dims = self.utility.FLAGS.embedding_dims
     params["unit"] = tf.Variable(
         self.RandomUniformInit([len(utility.operations_set), embedding_dims]))
-    params["word"] = tf.Variable(
-        self.RandomUniformInit([utility.FLAGS.vocab_size, embedding_dims]))
+
+    if self.pretrain_emb == 'glove':
+        import cPickle as pickle
+        with open(self.utility.FLAGS.embeddings_pickle, 'r') as f: 
+          temp = pickle.load(f)
+          params['word'] = tf.get_variable(
+              name='pretrained_embedding',
+              initializer=tf.constant(temp),
+              trainable=False
+          )
+    elif self.pretrain_emb == 'custom':
+        params["word"] = tf.Variable(
+            self.RandomUniformInit([utility.FLAGS.vocab_size, embedding_dims]))
+
     params["word_match_feature_column_name"] = tf.Variable(
         self.RandomUniformInit([1]))
     params["controller"] = tf.Variable(

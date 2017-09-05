@@ -26,59 +26,113 @@ def return_index(a):
     if (a[i] == 1.0):
       return i
 
-
 def construct_vocab(data, utility, add_word=False):
-  ans = []
-  for example in data:
-    sent = ""
-    for word in example.question:
-      if (not (isinstance(word, numbers.Number))):
-        sent += word + " "
-    example.original_nc = copy.deepcopy(example.number_columns)
-    example.original_wc = copy.deepcopy(example.word_columns)
-    example.original_nc_names = copy.deepcopy(example.number_column_names)
-    example.original_wc_names = copy.deepcopy(example.word_column_names)
 
-    if (add_word):
-      continue
-    number_found = 0
-    if (not (example.is_bad_example)):
-      for word in example.question:
-        if (isinstance(word, numbers.Number)):
-          number_found += 1
-        else:
-          if (not (utility.word_ids.has_key(word))):
-            utility.words.append(word)
-            utility.word_count[word] = 1
-            utility.word_ids[word] = len(utility.word_ids)
-            utility.reverse_word_ids[utility.word_ids[word]] = word
-          else:
-            utility.word_count[word] += 1
-      for col_name in example.word_column_names:
-        for word in col_name:
-          if (isinstance(word, numbers.Number)):
-            number_found += 1
-          else:
-            if (not (utility.word_ids.has_key(word))):
-              utility.words.append(word)
-              utility.word_count[word] = 1
-              utility.word_ids[word] = len(utility.word_ids)
-              utility.reverse_word_ids[utility.word_ids[word]] = word
-            else:
-              utility.word_count[word] += 1
-      for col_name in example.number_column_names:
-        for word in col_name:
-          if (isinstance(word, numbers.Number)):
-            number_found += 1
-          else:
-            if (not (utility.word_ids.has_key(word))):
-              utility.words.append(word)
-              utility.word_count[word] = 1
-              utility.word_ids[word] = len(utility.word_ids)
-              utility.reverse_word_ids[utility.word_ids[word]] = word
-            else:
-              utility.word_count[word] += 1 
+    if (utility.FLAGS.word_embeddings == 'glove'):
+      if (add_word):
+        pass
+      with open(utility.FLAGS.embeddings_file) as f:
+        lines = f.readlines()
+        index = 0
+        for l in lines:
+          word = l.split(' ')[0]
+          utility.word_ids[word] = index
+          utility.reverse_word_ids[index] = word
+          utility.word_count[word] = 0
+          utility.words.append(word)
+          index += 1
 
+      ans = []
+      for example in data:
+        sent = ""
+        for word in example.question:
+          if (not (isinstance(word, numbers.Number))):
+            sent += word + " "
+        example.original_nc = copy.deepcopy(example.number_columns)
+        example.original_wc = copy.deepcopy(example.word_columns)
+        example.original_nc_names = copy.deepcopy(example.number_column_names)
+        example.original_wc_names = copy.deepcopy(example.word_column_names)
+        
+        if (add_word):
+          continue
+
+        number_found = 0
+        if (not (example.is_bad_example)):
+          for word in example.question:
+            if (isinstance(word, numbers.Number)):
+              number_found += 1
+            else:
+              if (utility.word_ids.has_key(word)):
+                utility.word_count[word] += 1
+
+          for col_name in example.word_column_names:
+            for word in col_name:
+              if (isinstance(word, numbers.Number)):
+                number_found += 1
+              else:
+                if (utility.word_ids.has_key(word)):
+                  utility.word_count[word] += 1
+
+          for col_name in example.number_column_names:
+            for word in col_name:
+              if (isinstance(word, numbers.Number)):
+                number_found += 1
+              else:
+                if (utility.word_ids.has_key(word)):
+                  utility.word_count[word] += 1 
+
+    elif (utility.FLAGS.word_embeddings == 'custom'):  
+      ans = []
+      for example in data:
+        sent = ""
+        for word in example.question:
+          if (not (isinstance(word, numbers.Number))):
+            sent += word + " "
+        example.original_nc = copy.deepcopy(example.number_columns)
+        example.original_wc = copy.deepcopy(example.word_columns)
+        example.original_nc_names = copy.deepcopy(example.number_column_names)
+        example.original_wc_names = copy.deepcopy(example.word_column_names)
+        
+        if (add_word):
+          continue
+
+        number_found = 0
+        if (not (example.is_bad_example)):
+          for word in example.question:
+            if (isinstance(word, numbers.Number)):
+              number_found += 1
+            else:
+              if (not (utility.word_ids.has_key(word))):
+                utility.words.append(word)
+                utility.word_count[word] = 1
+                utility.word_ids[word] = len(utility.word_ids)
+                utility.reverse_word_ids[utility.word_ids[word]] = word
+              else:
+                utility.word_count[word] += 1
+          for col_name in example.word_column_names:
+            for word in col_name:
+              if (isinstance(word, numbers.Number)):
+                number_found += 1
+              else:
+                if (not (utility.word_ids.has_key(word))):
+                  utility.words.append(word)
+                  utility.word_count[word] = 1
+                  utility.word_ids[word] = len(utility.word_ids)
+                  utility.reverse_word_ids[utility.word_ids[word]] = word
+                else:
+                  utility.word_count[word] += 1
+          for col_name in example.number_column_names:
+            for word in col_name:
+              if (isinstance(word, numbers.Number)):
+                number_found += 1
+              else:
+                if (not (utility.word_ids.has_key(word))):
+                  utility.words.append(word)
+                  utility.word_count[word] = 1
+                  utility.word_ids[word] = len(utility.word_ids)
+                  utility.reverse_word_ids[utility.word_ids[word]] = word
+                else:
+                  utility.word_count[word] += 1 
 
 def word_lookup(word, utility):
   if (utility.word_ids.has_key(word)):
