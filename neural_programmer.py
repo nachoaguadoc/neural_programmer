@@ -284,7 +284,6 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
   utility.random.shuffle(train_data)
   start = time.time()
   training_loss = []
-  text_file = open(model_dir + "training_loss.txt", "w")
   for i in range(utility.FLAGS.train_steps):
     curr_step = i
     if (i > 0 and i % FLAGS.write_every == 0):
@@ -306,9 +305,11 @@ def Train(graph, utility, batch_size, train_data, sess, model_dir,
       start = end
       print(" printing train set loss: ", train_set_loss / utility.FLAGS.eval_cycle)
       training_loss.append(train_set_loss / utility.FLAGS.eval_cycle)
+      text_file = open(model_dir + "training_loss.txt", "w")
       text_file.write(str(training_loss))
+      text_file.close()
       train_set_loss = 0.0
-  text_file.close()
+  
 
 def Demo(graph, utility, sess, model_dir, dat):
   i = 0
