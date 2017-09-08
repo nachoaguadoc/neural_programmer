@@ -134,9 +134,9 @@ def main(args):
     #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
 
     print("Preprocessing finished:")
-    print("     Number of train examples " + len(train_data))
-    print("     Number of validation examples " + len(dev_data))
-    print("     Number of test examples " + len(test_data))
+    print("     Number of train examples " + str(len(train_data)))
+    print("     Number of validation examples " + str(len(dev_data)))
+    print("     Number of test examples " + str(len(test_data)))
 
     #construct TF graph and train or evaluate
     master(train_data, dev_data, utility, dat)
@@ -291,7 +291,7 @@ def predict(sess, data, answers, batch_size, graph, table_key, dat):
                         row_answer += " " + str(l)
                     rows_answer.append(row_answer)
 
-            final_answer = ','.join(rows_answer)
+            final_answer = ', '.join(rows_answer)
 
         final_answer = final_answer[1:] if final_answer[0] == ' ' else final_answer
         final_predictions.append(final_answer)
@@ -333,9 +333,9 @@ def train(graph, utility, batch_size, train_data, sess, model_dir,
         if (i > 0 and i % FLAGS.eval_cycle == 0):
             end = time.time()
             time_taken = end - start
-            print("Step ", i, " . Time: ", time_taken, " seconds")
+            print("Step " + str(i) + " . Time: " + str(time_taken) + " seconds")
             start = end
-            print("Training Loss: ", train_set_loss / utility.FLAGS.eval_cycle)
+            print("Training Loss: " + str(train_set_loss / utility.FLAGS.eval_cycle))
             training_loss.append(train_set_loss / utility.FLAGS.eval_cycle)
             text_file = open(model_dir + "training_loss.txt", "w")
             text_file.write(str(training_loss))
@@ -345,7 +345,7 @@ def train(graph, utility, batch_size, train_data, sess, model_dir,
             m, s = divmod(eta, 60)
             h, m = divmod(m, 60)
             print "%d:%02d:%02d" % (h, m, s)
-            print("Estimated Remaining Time: ", h, " hours, ", m, " minutes")
+            print("Estimated Remaining Time: " + str(h) + " hours, " + str(m) + " minutes")
 
 def demo(graph, utility, sess, model_dir, dat, mode):
     if mode=='visual':
@@ -451,7 +451,7 @@ def get_prediction(sess, data, graph, utility, dat):
                     debugging['answer_neural'].append(row_answer)
                 rows_answer.append(row_answer)
             debugging['is_lookup_neural'] = True
-            lookup_answer = ','.join(rows_answer)
+            lookup_answer = ', '.join(rows_answer)
             return (lookup_answer, debugging)
 
     debugging['is_lookup_neural'] = False
