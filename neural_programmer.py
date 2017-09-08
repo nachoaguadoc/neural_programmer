@@ -115,7 +115,7 @@ def main(args):
 
     #Load the training, validation and test data
     dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
-    train_data, dev_data, test_data = dat.load(FLAGS.job_mode, FLAGS.model)
+    train_data, dev_data, test_data = dat.load(FLAGS.mode, FLAGS.model)
 
     # Construct the vocabulary 
     utility.words = []
