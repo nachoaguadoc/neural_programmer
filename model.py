@@ -101,7 +101,7 @@ class Graph():
     question_c_hidden = tf.zeros(
         [self.batch_size, self.utility.FLAGS.embedding_dims], self.data_type)
     if (self.utility.FLAGS.rnn_dropout > 0.0):
-      if (self.mode == "train"):
+      if self.mode == "train":
         rnn_dropout_mask = tf.cast(
             tf.random_uniform(
                 tf.shape(question_hidden), minval=0.0, maxval=1.0) <
@@ -150,7 +150,7 @@ class Graph():
                                 tf.transpose(self.batch_ordinal_question_one), 2
                             ), [1, 1, self.utility.FLAGS.embedding_dims]), 0))))
       question_number_softmax = tf.nn.softmax(tf.concat(axis=1, values=[first, second]))
-      if (self.mode == "test" or self.mode == "error-test" or self.mode == "demo"):
+      if not self.mode == "train":
         cond = tf.equal(question_number_softmax,
                         tf.reshape(
                             tf.reduce_max(question_number_softmax, 1),
@@ -431,7 +431,7 @@ class Graph():
     full_column_softmax = self.compute_column_softmax(column_controller_vector,
                                                       curr_pass)
     soft_column_softmax = full_column_softmax
-    if (self.mode == "test" or self.mode == "error-test" or self.mode == "demo"):
+    if not self.mode == "train":
       self.debug_soft_ops.append(softmax)
       self.debug_soft_cols.append(full_column_softmax)  
       full_column_softmax = self.make_hard_softmax(full_column_softmax)
@@ -483,7 +483,7 @@ class Graph():
     for val in range(1, 58):
       print_error += self.compute_lookup_error(val + 0.0)
     print_error = print_error * self.utility.FLAGS.print_cost / self.num_entries
-    if (self.mode == "train"):
+    if self.mode == "train":
       error = tf.where(
           tf.logical_and(
               tf.not_equal(self.batch_answer, 0.0),
@@ -551,7 +551,7 @@ class Graph():
         data_type) * self.select_bad_number_mask  #bs * max_cols * max_elements
     self.init_select_word_match = 0
     if (self.utility.FLAGS.rnn_dropout > 0.0):
-      if (self.mode == "train"):
+      if self.mode == "train":
         history_rnn_dropout_mask = tf.cast(
             tf.random_uniform(
                 tf.shape(hprev), minval=0.0, maxval=1.0) <
