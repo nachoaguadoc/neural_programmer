@@ -741,7 +741,7 @@ class WikiQuestionGenerator(object):
     self.load_annotated_data(os.path.join(self.data_folder, "training.annotated"))
     self.load_annotated_tables()
 
-    if (mode=='demo-console' or mode=='demo-visual' or mode=='error-test'):
+    if (mode=='demo-console' or mode=='demo-visual' or mode=='custom-test'):
       self.load_custom_data()
       self.load_custom_tables(model)
 

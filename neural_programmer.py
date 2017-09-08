@@ -415,7 +415,7 @@ def get_prediction(sess, data, graph, utility):
 
     debugging = get_steps(sess, data, graph, utility)
 
-    answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, curr, batch_size, graph))[0]
+    answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))[0]
     scalar_answer = answers[0][0]
     lookup_answer = answers[1][0]
 
@@ -468,7 +468,7 @@ def get_steps(sess, data, graph, utility):
         'certainty': 0.0
     }
 
-    steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, curr, 1, graph))[0]
+    steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))[0]
     ops = steps['ops']
     cols = steps['cols']
     rows = steps['rows']
