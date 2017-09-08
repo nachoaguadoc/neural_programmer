@@ -372,7 +372,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
             final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
 
             # Run the model to get an answer
-            final_answer, debugging = get_prediction(sess, final_data, graph, utility)
+            final_answer, debugging = get_prediction(sess, final_data, graph, utility, dat)
 
             certainty = debugging['certainty']
             if (certainty < FLAGS.certainty_threshold):
@@ -404,7 +404,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
                 data_utils.construct_vocab(data, utility, True)
                 final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
 
-                final_answer, debugging = get_prediction(sess, final_data, graph, utility)
+                final_answer, debugging = get_prediction(sess, final_data, graph, utility, dat)
 
                 certainty = debugging['certainty']
 
@@ -413,7 +413,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
                 print "> " + final_answer + "\n"
                 i += 1
 
-def get_prediction(sess, data, graph, utility):
+def get_prediction(sess, data, graph, utility, dat):
 
     debugging = get_steps(sess, data, graph, utility)
 
