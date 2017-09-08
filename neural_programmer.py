@@ -154,7 +154,7 @@ def master(train_data, dev_data, utility, dat):
 
     key = utility.FLAGS.mode
 
-    print("Running model in mode ", key)
+    print("Running model in mode " + key)
 
 
     graph = model.Graph(utility, batch_size, utility.FLAGS.max_passes, mode=key)
@@ -171,7 +171,7 @@ def master(train_data, dev_data, utility, dat):
         saver = tf.train.Saver(to_save, max_to_keep=500)
 
         if key == 'custom-test':
-            print("restoring: ", model_file)
+            print("Restoring file " + model_file)
             saver.restore(sess, model_dir + model_file)
 
             custom_test(graph, utility, batch_size, sess, model_dir, dat, 'data/custom/uefa.examples')
@@ -195,11 +195,11 @@ def master(train_data, dev_data, utility, dat):
             testing_accuracy = []
             for model_file in file_list:
                 model_file = model_file[1]
-                print "Restoring ", model_file
+                print("Restoring file" + model_file)
                 saver.restore(sess, model_dir + model_file)
                 model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
-                print "Evaluating model ", model_file, model_step
+                print("Evaluating model " + model_file + " " + model_step)
                 accuracy = test(sess, dev_data, batch_size, graph, model_step)
                 testing_accuracy.append(accuracy)
 
@@ -210,20 +210,20 @@ def master(train_data, dev_data, utility, dat):
         elif key == 'train':
             ckpt = tf.train.get_checkpoint_state(model_dir)
             if not (tf.gfile.IsDirectory(utility.FLAGS.output_dir)):
-                print "Creating output directory ", utility.FLAGS.output_dir
+                print("Creating output directory " + utility.FLAGS.output_dir)
                 tf.gfile.MkDir(utility.FLAGS.output_dir)
             if not (tf.gfile.IsDirectory(model_dir)):
-                print "Creating model directory ", model_dir
+                print("Creating model directory " + model_dir)
                 tf.gfile.MkDir(model_dir)
             train(graph, utility, batch_size, train_data, sess, model_dir, saver)
 
         elif key == 'demo-visual':
-            print("Restoring ", model_file)
+            print("Restoring file " + model_file)
             saver.restore(sess, model_dir + model_file)
             demo(graph, utility, sess, model_dir, dat, 'visual')
 
         elif key == 'demo-console':
-            print("Restoring ", model_file)
+            print("Restoring file " + model_file)
             saver.restore(sess, model_dir + model_file)
             demo(graph, utility, sess, model_dir, dat, 'console')
 
@@ -249,9 +249,9 @@ def custom_test(graph, utility, batch_size, sess, model_dir, dat, file_name):
         else:
             print(questions[i], predictions[i], answers[i])
     accuracy = (correct / total) * 100
-    print("Total test cases:", total)
-    print("Correct answers:", correct)
-    print("Accuracy:", accuracy)
+    print("Total test cases: " + str(total))
+    print("Correct answers: " + str(correct))
+    print("Accuracy: " + str(accuracy))
 
 def predict(sess, data, answers, batch_size, graph, table_key, dat):
 
@@ -333,9 +333,8 @@ def train(graph, utility, batch_size, train_data, sess, model_dir,
         if (i > 0 and i % FLAGS.eval_cycle == 0):
             end = time.time()
             time_taken = end - start
-            print("Step " + str(i) + " . Time: " + str(time_taken) + " seconds")
+            print("Step " + str(i) + " after " + str(time_taken) + " seconds with Training Loss of " + str(train_set_loss / utility.FLAGS.eval_cycle))
             start = end
-            print("Training Loss: " + str(train_set_loss / utility.FLAGS.eval_cycle))
             training_loss.append(train_set_loss / utility.FLAGS.eval_cycle)
             text_file = open(model_dir + "training_loss.txt", "w")
             text_file.write(str(training_loss))
@@ -344,8 +343,8 @@ def train(graph, utility, batch_size, train_data, sess, model_dir,
             eta = (((utility.FLAGS.train_steps - i) / FLAGS.eval_cycle) * time_taken)
             m, s = divmod(eta, 60)
             h, m = divmod(m, 60)
-            print "%d:%02d:%02d" % (h, m, s)
-            print("Estimated Remaining Time: " + str(h) + " hours, " + str(m) + " minutes")
+            print("Estimated Remaining Time: " + str(int(h)) + " hours, " + str(int(m)) + " minutes")
+            print("\n")
 
 def demo(graph, utility, sess, model_dir, dat, mode):
     if mode=='visual':
@@ -364,7 +363,8 @@ def demo(graph, utility, sess, model_dir, dat, mode):
             table_key = data[0]
             tokens = data[1]
             question_id = 'iac-' + str(i)
-            print("Question:", tokens, "Table:", table_key)
+            print("Question: " + tokens)
+            print("Table: " + table_key)
 
             # Load the question into the model 
             data = [dat.load_example(question_id, tokens, table_key)]
@@ -378,7 +378,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
             if (certainty < FLAGS.certainty_threshold):
                 final_answer = "I cannot answer that question with the information in the table."
 
-            print("Answer:", final_answer + "\n")
+            print("Answer: " + final_answer + "\n")
     
             result = {"answer": final_answer, "debugging": debugging}
             result = str(result)
@@ -399,7 +399,8 @@ def demo(graph, utility, sess, model_dir, dat, mode):
                 print("\n")
                 if tokens == 'new':
                     break
-                print("Question:", tokens, "Table:", table_key)
+                print("Question: " + tokens)
+                print("Table: " + table_key)
                 data = [dat.load_example(question_id, tokens, table_key)]
                 data_utils.construct_vocab(data, utility, True)
                 final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
@@ -410,7 +411,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
 
                 if (certainty < FLAGS.certainty_threshold):
                     print("> I do not know the answer to your question, although I would say..." + "\n")
-                print "> " + final_answer + "\n"
+                print("> " + final_answer + "\n")
                 i += 1
 
 def get_prediction(sess, data, graph, utility, dat):
@@ -482,7 +483,6 @@ def get_steps(sess, data, graph, utility):
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
     certainty = 0
-    print(steps)
     print("-------------- New question --------------")
     # Debugging step by step
     for i in range(len(ops)):
@@ -527,10 +527,12 @@ def get_steps(sess, data, graph, utility):
 
     certainty = (certainty / len(ops)) * 100
     debugging['certainty'] = certainty
-    print("Final confidence: " + str(certainty))
+    to_log = "Final confidence: " + str(certainty)
+
     if (certainty < FLAGS.certainty_threshold):
         debugging['below_threshold'] = True
-        print("(Below threshold of ", str(FLAGS.certainty_threshold), "%")
+        to_log += " (Below threshold of " + str(FLAGS.certainty_threshold) + "%)"
+    
     print("-------------------------------------------")
 
     return debugging
