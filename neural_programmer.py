@@ -416,28 +416,33 @@ def demo(graph, utility, sess, model_dir, dat, mode):
 def get_prediction(sess, data, graph, utility, dat):
 
     debugging = get_steps(sess, data, graph, utility)
-
+    table_key = data[0].table_key
     answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))[0]
     scalar_answer = answers[0][0]
     lookup_answer = answers[1][0]
 
     lookup_answers = []
-    j = 0
-    for col in range(len(lookup_answer)):
+
+    for col_index in range(len(lookup_answer)):
         if not all(p == 0 for p in lookup_answer[col]):
-            col_index = col if col<15 else col-15
-            col_real_index = data[0].number_column_indices[col_index]
-            col_name = data[j].number_column_names[col_index]
+            if col_index < 15:
+                col_real_index = col_index
+                col = data[0].number_column_names[col_real_index]
+                cells = dat.custom_tables[table_key].number_columns[col_real_index]
+            else:
+                col_real_index = col_index - 15
+                col = data[0].word_column_names[col_real_index]
+                cells = dat.custom_tables[table_key].word_columns[col_real_index]
+
 
             rows = [i for i, e in enumerate(lookup_answer[col]) if e != 0]
-            for r in rows:
-                debugging['cells_answer_neural'].append([r, col_index])
-        
+
             rows_answer = []
-            for row in rows:
+            for r in rows:
+                debugging['cells_answer_neural'].append([r, col_real_index])
+        
                 row_answer = ''
-                col = col-15 if col>=15 else col
-                list_answer = dat.custom_tables[table_key].number_columns[col][row]
+                list_answer = cells[row]
                 if type(list_answer) == float:
                     debugging['answer_neural'].append(list_answer)
                     row_answer = str(list_answer)
@@ -498,9 +503,15 @@ def get_steps(sess, data, graph, utility):
         step['operation_softmax'] = soft_ops[i][0][step['operation_index']]
 
         col_index = np.where(cols[i] == 1)[1][0]
-        col_real_index = col_index if col_index < 15 else col_index-15
-        col = data[0].number_column_names[col_real_index]
-        step['column_index'] = data[0].number_column_indices[col_real_index]
+
+        if col_index < 15:
+            col_real_index = col_index
+            col = data[0].number_column_names[col_real_index]
+            step['column_index'] = data[0].number_column_indices[col_real_index]
+        else:
+            col_real_index = col_index - 15
+            col = data[0].word_column_names[col_real_index]
+            step['column_index'] = data[0].word_column_indices[col_real_index]          
 
         step['column_name'] = " ".join([str(j) for j in col if j!="dummy_token"])
         step['column_softmax'] = soft_cols[i][0][col_index]
