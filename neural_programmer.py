@@ -222,7 +222,7 @@ def master(train_data, dev_data, utility, dat):
             saver.restore(sess, model_dir + model_file)
             demo(graph, utility, sess, model_dir, dat, 'visual')
 
-        elif key == 'demo-console'
+        elif key == 'demo-console':
             demo(graph, utility, sess, model_dir, dat, 'console')
 
 
@@ -291,7 +291,7 @@ def predict(sess, data, answers, batch_size, graph, table_key, dat):
 
             final_answer = ','.join(rows_answer)
 
-        final_answer = final_answer[1:] if final_answer[0] == ' '
+        final_answer = final_answer[1:] if final_answer[0] == ' ' else final_answer
         final_predictions.append(final_answer)
 
     return final_predictions
@@ -343,7 +343,7 @@ def train(graph, utility, batch_size, train_data, sess, model_dir,
             m, s = divmod(eta, 60)
             h, m = divmod(m, 60)
             print "%d:%02d:%02d" % (h, m, s)
-            print("Estimated Remaining Time: ", h " hours, ", m, " minutes")
+            print("Estimated Remaining Time: ", h, " hours, ", m, " minutes")
 
 def demo(graph, utility, sess, model_dir, dat, mode):
     if mode=='visual':
@@ -434,7 +434,7 @@ def get_prediction(sess, data, graph, utility):
             rows_answer = []
             for row in rows:
                 row_answer = ''
-                col = col-15 if col>=15 
+                col = col-15 if col>=15 else col
                 list_answer = dat.custom_tables[table_key].number_columns[col][row]
                 if type(list_answer) == float:
                     debugging['answer_neural'].append(list_answer)
