@@ -26,7 +26,7 @@ import model
 import wiki_data
 import parameters
 import data_utils
-import socket 
+import socket
 import config
 
 # Define the parameters for the preprocessing and running the model
@@ -117,7 +117,7 @@ def main(args):
     dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
     train_data, dev_data, test_data = dat.load(FLAGS.mode, FLAGS.model)
 
-    # Construct the vocabulary 
+    # Construct the vocabulary
     utility.words = []
     utility.word_ids = {}
     utility.reverse_word_ids = {}
@@ -148,7 +148,7 @@ def master(train_data, dev_data, utility, dat):
     param_class = parameters.Parameters(utility)
     params, global_step, init = param_class.parameters(utility)
 
-    batch_size = utility.FLAGS.batch_size 
+    batch_size = utility.FLAGS.batch_size
     model_dir = utility.FLAGS.output_dir + "/model_" + utility.FLAGS.job_id + "/"
     model_file = 'model_' + utility.FLAGS.model_id
 
@@ -235,7 +235,7 @@ def custom_test(graph, utility, batch_size, sess, model_dir, dat, file_name):
     data = []
     for i in range(len(questions)):
         example = dat.load_example(ids[i], questions[i], table_keys[i])
-        data.append(example) 
+        data.append(example)
 
     data_utils.construct_vocab(data, utility, True)
     final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
@@ -311,7 +311,7 @@ def test(sess, data, batch_size, graph, i):
     print "Accuracy after ", i, " iterations: ", accuracy
     return accuracy
 
-# Train the model 
+# Train the model
 def train(graph, utility, batch_size, train_data, sess, model_dir,
           saver):
     curr = 0
@@ -366,7 +366,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
             print("Question: " + tokens)
             print("Table: " + table_key)
 
-            # Load the question into the model 
+            # Load the question into the model
             data = [dat.load_example(question_id, tokens, table_key)]
             data_utils.construct_vocab(data, utility, True)
             final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
@@ -379,7 +379,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
                 final_answer = "I cannot answer that question with the information in the table."
 
             print("Answer: " + final_answer + "\n")
-    
+
             result = {"answer": final_answer, "debugging": debugging}
             result = str(result)
             i += 1
@@ -441,7 +441,7 @@ def get_prediction(sess, data, graph, utility, dat):
             rows_answer = []
             for row in rows:
                 debugging['cells_answer_neural'].append([row, col_real_index])
-        
+
                 row_answer = ''
                 list_answer = cells[row]
                 if type(list_answer) == float:
@@ -458,7 +458,7 @@ def get_prediction(sess, data, graph, utility, dat):
     debugging['is_lookup_neural'] = False
     debugging['answer_neural'].append(int(scalar_answer))
     return (str(scalar_answer), debugging)
-    
+
 def get_steps(sess, data, graph, utility):
     debugging =  {
         'question': '',
@@ -511,11 +511,11 @@ def get_steps(sess, data, graph, utility):
         else:
             col_real_index = col_index - 15
             col = data[0].word_column_names[col_real_index]
-            step['column_index'] = data[0].word_column_indices[col_real_index]          
+            step['column_index'] = data[0].word_column_indices[col_real_index]
 
         step['column_name'] = " ".join([str(j) for j in col if j!="dummy_token"])
         step['column_softmax'] = soft_cols[i][0][col_index]
-       
+
         step['rows'] =  np.ndarray.tolist(np.where(rows[i] == 1)[1])
 
         debugging['steps'].append(step)
@@ -532,7 +532,7 @@ def get_steps(sess, data, graph, utility):
     if (certainty < FLAGS.certainty_threshold):
         debugging['below_threshold'] = True
         to_log += " (Below threshold of " + str(FLAGS.certainty_threshold) + "%)"
-    
+
     print("-------------------------------------------")
 
     return debugging
