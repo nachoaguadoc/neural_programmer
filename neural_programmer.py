@@ -223,6 +223,8 @@ def master(train_data, dev_data, utility, dat):
             demo(graph, utility, sess, model_dir, dat, 'visual')
 
         elif key == 'demo-console':
+            print("Restoring ", model_file)
+            saver.restore(sess, model_dir + model_file)
             demo(graph, utility, sess, model_dir, dat, 'console')
 
 
@@ -475,7 +477,7 @@ def get_steps(sess, data, graph, utility):
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
     certainty = 0
-    
+    print(steps)
     print("-------------- New question --------------")
     # Debugging step by step
     for i in range(len(ops)):
