@@ -512,7 +512,7 @@ def get_steps(sess, data, graph, utility):
         certainty_step = step['operation_softmax'] * step['column_softmax']
         certainty += certainty_step
 
-        print("STEP ", str(i), " : Performed operation <", step['operation_name'], "> (", + str(step['operation_softmax']) + ") over the column <", step['column_name'], "> (" + str(step['column_softmax']) + ")")
+        print("STEP " + str(i) + " : Performed operation <" + step['operation_name'] + "> (" + str(step['operation_softmax']) + ") over the column <" + step['column_name'] + "> (" + str(step['column_softmax']) + ")")
 
     certainty = (certainty / len(ops)) * 100
     debugging['certainty'] = certainty
