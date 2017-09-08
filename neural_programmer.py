@@ -134,9 +134,9 @@ def main(args):
     #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
 
     print("Preprocessing finished:")
-    print("     Number of train examples ", len(train_data))
-    print("     Number of validation examples ", len(dev_data))
-    print("     Number of test examples ", len(test_data))
+    print("     Number of train examples " + len(train_data))
+    print("     Number of validation examples " + len(dev_data))
+    print("     Number of test examples " + len(test_data))
 
     #construct TF graph and train or evaluate
     master(train_data, dev_data, utility, dat)
@@ -424,7 +424,7 @@ def get_prediction(sess, data, graph, utility, dat):
     lookup_answers = []
 
     for col_index in range(len(lookup_answer)):
-        if not all(p == 0 for p in lookup_answer[col]):
+        if not all(p == 0 for p in lookup_answer[col_index]):
             if col_index < 15:
                 col_real_index = col_index
                 col = data[0].number_column_names[col_real_index]
@@ -435,11 +435,11 @@ def get_prediction(sess, data, graph, utility, dat):
                 cells = dat.custom_tables[table_key].word_columns[col_real_index]
 
 
-            rows = [i for i, e in enumerate(lookup_answer[col]) if e != 0]
+            rows = [i for i, e in enumerate(lookup_answer[col_index]) if e != 0]
 
             rows_answer = []
-            for r in rows:
-                debugging['cells_answer_neural'].append([r, col_real_index])
+            for row in rows:
+                debugging['cells_answer_neural'].append([row, col_real_index])
         
                 row_answer = ''
                 list_answer = cells[row]
