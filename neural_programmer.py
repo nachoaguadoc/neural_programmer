@@ -284,7 +284,7 @@ def predict(sess, data, answers, batch_size, graph, table_key, dat):
             for row in rows:
                 row_answer = ''
                 col_index = col if col<15 else col-15
-                list_answer = dat.custom_tables[table_key].number_columns[col_index][row]
+                list_answer = dat.custom_tbs[table_key].number_columns[col_index][row]
 
                 if type(list_answer) == float:
                     row_answer = str(int(list_answer))
@@ -419,7 +419,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
 def get_prediction(sess, data, graph, utility, dat):
 
     debugging = get_steps(sess, data, graph, utility)
-    table_key = data[0].table_key
+    table_key = data[0].tb_key
     answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))[0]
     scalar_answer = answers[0][0]
     lookup_answer = answers[1][0]
@@ -430,12 +430,12 @@ def get_prediction(sess, data, graph, utility, dat):
         if not all(p == 0 for p in lookup_answer[col_index]):
             if col_index < 15:
                 col_real_index = col_index
-                col = data[0].number_column_names[col_real_index]
-                cells = dat.custom_tables[table_key].number_columns[col_real_index]
+                col = data[0].nb_col_names[col_real_index]
+                cells = dat.custom_tbs[table_key].nb_cols[col_real_index]
             else:
                 col_real_index = col_index - 15
-                col = data[0].word_column_names[col_real_index]
-                cells = dat.custom_tables[table_key].word_columns[col_real_index]
+                col = data[0].wd_col_names[col_real_index]
+                cells = dat.custom_tbs[table_key].wd_cols[col_real_index]
 
 
             rows = [i for i, e in enumerate(lookup_answer[col_index]) if e != 0]
@@ -508,12 +508,12 @@ def get_steps(sess, data, graph, utility):
 
         if col_index < 15:
             col_real_index = col_index
-            col = data[0].number_column_names[col_real_index]
-            step['column_index'] = data[0].number_column_indices[col_real_index]
+            col = data[0].nb_col_names[col_real_index]
+            step['column_index'] = data[0].nb_col_idx[col_real_index]
         else:
             col_real_index = col_index - 15
-            col = data[0].word_column_names[col_real_index]
-            step['column_index'] = data[0].word_column_indices[col_real_index]
+            col = data[0].wd_col_names[col_real_index]
+            step['column_index'] = data[0].wd_col_idx[col_real_index]
 
         step['column_name'] = " ".join([str(j) for j in col if j!="dummy_token"])
         step['column_softmax'] = soft_cols[i][0][col_index]
