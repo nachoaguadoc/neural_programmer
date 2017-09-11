@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-from para import FLAGS
+#from para import FLAGS
 from random import Random
 from utils.helpers import *
 from sys import exit

@@ -115,7 +115,7 @@ def main(args):
     test_name = "pristine-unseen-tables.examples"
 
     #Load the training, validation and test data
-    dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
+    dat = wikiqa.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
     desc = True if FLAGS.model == 'column_description' else False
     train_data, dev_data, test_data = dat.load(FLAGS.mode, desc)
 
@@ -131,8 +131,8 @@ def main(args):
     #data_utils.perform_word_cutoff(utility)
 
 
-    train_data = data_utils.complete_wiki_processing(train_data, utility, 'train')
-    dev_data = data_utils.complete_wiki_processing(dev_data, utility, 'error-test')
+    train_data = masking.complete_wiki_processing(train_data, utility, 'train')
+    dev_data = masking.complete_wiki_processing(dev_data, utility, 'error-test')
     #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
 
     print("Preprocessing finished:")
@@ -233,14 +233,14 @@ def master(train_data, dev_data, utility, dat):
 # Evaluate the accuracy of the model with a set of given questions as input
 def custom_test(graph, utility, batch_size, sess, model_dir, dat, file_name):
 
-    ids, questions, table_keys, answers = wiki_data.load_custom_questions(file_name)
+    ids, questions, table_keys, answers = wikiqa.load_custom_questions(file_name)
     data = []
     for i in range(len(questions)):
         example = dat.load_example(ids[i], questions[i], table_keys[i])
         data.append(example)
 
     data_utils.construct_vocab(data, utility, True)
-    final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
+    final_data = masking.complete_wiki_processing(data, utility, 'demo')
     predictions = predict(sess, final_data, answers, batch_size, graph, table_keys[0], dat)
     total = len(predictions)
 
@@ -371,7 +371,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
             # Load the question into the model
             data = [dat.load_example(question_id, tokens, table_key)]
             data_utils.construct_vocab(data, utility, True)
-            final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
+            final_data = masking.complete_wiki_processing(data, utility, 'demo')
 
             # Run the model to get an answer
             final_answer, debugging = get_prediction(sess, final_data, graph, utility, dat)
@@ -405,7 +405,7 @@ def demo(graph, utility, sess, model_dir, dat, mode):
                 print("Table: " + table_key)
                 data = [dat.load_example(question_id, tokens, table_key)]
                 data_utils.construct_vocab(data, utility, True)
-                final_data = data_utils.complete_wiki_processing(data, utility, 'demo')
+                final_data = masking.complete_wiki_processing(data, utility, 'demo')
 
                 final_answer, debugging = get_prediction(sess, final_data, graph, utility, dat)
 

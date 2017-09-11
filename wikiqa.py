@@ -74,7 +74,7 @@ class TableInfo(object):
 class WikiQuestionLoader(object):
     def __init__(self, data_name, root_folder):
         self.root_folder = root_folder
-        self.data_path = os.path.join(self.root_folder, 'data/data')
+        self.data_path = os.path.join(self.root_folder, 'data')
         self.data_name = data_name
         self.examples  = []
 
@@ -107,7 +107,7 @@ class WikiQuestionGenerator(object):
         self.test_loader = WikiQuestionLoader(test_name, root_folder)
         self.bad_egs = 0
         self.root_folder = root_folder
-        self.data_folder = os.path.join(self.root_folder, 'data/annotated/data')
+        self.data_folder = os.path.join(self.root_folder, 'annotated/data')
         self.ann_egs = {}
         self.ann_tbs = {}
         self.custom_egs = {}
@@ -202,13 +202,13 @@ class WikiQuestionGenerator(object):
         """
         annotated tables keys are contex
         """
-        tables = self.custom_tbs if mode=='custom' else self.ann_tbs
+        tables = self.custom_tbs if custom else self.ann_tbs
         for table in tables.keys():
             ann_tb = table.replace('csv', 'annotated')
             o_cols = []
             p_cols = []
             # print os.path.join(self.root_folder+'data', ann_tb)
-            f = tf.gfile.GFile(os.path.join(self.root_folder+'data', ann_tb), 'r')
+            f = tf.gfile.GFile(os.path.join(self.root_folder, ann_tb), 'r')
             counter = 0
             for line in f:
                 if counter > 0:
@@ -226,9 +226,10 @@ class WikiQuestionGenerator(object):
                 for j in xrange(max_row + 1):
                     o_cols[i].append(bad_nb)
                     p_cols[i].append(bad_nb)
-            f = tf.gfile.GFile(os.path.join(self.root_folder+'data', ann_tb), 'r')
+            f = tf.gfile.GFile(os.path.join(self.root_folder, ann_tb), 'r')
             counter = 0
             col_names = []
+            col_desc = []
             for line in f:
                 if counter > 0:
                     line = line.strip()
@@ -240,6 +241,8 @@ class WikiQuestionGenerator(object):
                         ner_tags = 'O|' * len(tokens)
                         ner_tags = ner_tags[:-1]
                         ner_values = '|' * (len(tokens)-1)
+                    else:
+                        col_desc.append([])
                     entry = self.prepro_sentence(tokens, ner_tags, ner_values)
                     if row=='-2':
                         new_entry = []
@@ -308,7 +311,7 @@ class WikiQuestionGenerator(object):
         tot = 0
         got = 0
         ice = {}
-        with tf.gfile.GFile(self.root_folder + "data/arvind-with-norms-2.tsv", mode="r") as f:
+        with tf.gfile.GFile(self.root_folder + "arvind-with-norms-2.tsv", mode="r") as f:
             lines = f.readlines()
             for line in lines:
                 line = line.strip()
