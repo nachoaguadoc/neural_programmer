@@ -381,13 +381,16 @@ class WikiQuestionGenerator(object):
             nb_col_idx = table_info.nb_col_idx
             wd_col_idx = table_info.wd_col_idx
             example.wd_cols = table_info.wd_cols
-            example.nb_cols = table_info.nb_cols
             example.wd_col_names = table_info.wd_col_names
-            example.p_nb_cols = table_info.p_nb_cols
+            example.wd_col_desc = table_info.wd_col_desc
             example.p_wd_cols = table_info.p_wd_cols
-            example.nb_col_names = table_info.nb_col_names
-            example.number_lookup_mat = example.lookup_mat[:, nb_col_idx]
             example.word_lookup_mat = example.lookup_mat[:, wd_col_idx]
+
+            example.nb_cols = table_info.nb_cols
+            example.nb_col_names = table_info.nb_col_names
+            example.nb_col_desc = table_info.nb_col_desc
+            example.p_nb_cols = table_info.p_nb_cols
+            example.number_lookup_mat = example.lookup_mat[:, nb_col_idx]
     
     def custom_answer_classification(self, q_id):
 
