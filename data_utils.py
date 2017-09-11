@@ -63,19 +63,19 @@ def construct_vocab(data, utility, add_word=False):
         ans = []
         for example in data:
             sent = ""
-            for word in example.question:
+            for word in example.q:
                 if (not (isinstance(word, numbers.Number))):
                     sent += word + " "
-            example.original_nc = copy.deepcopy(example.number_columns)
-            example.original_wc = copy.deepcopy(example.word_columns)
-            example.original_nc_names = copy.deepcopy(example.number_column_names)
-            example.original_wc_names = copy.deepcopy(example.word_column_names)
+            example.original_nc = copy.deepcopy(example.nb_cols)
+            example.original_wc = copy.deepcopy(example.wd_cols)
+            example.original_nc_names = copy.deepcopy(example.nb_col_names)
+            example.original_wc_names = copy.deepcopy(example.wd_col_names)
             
             if (add_word):
                 continue
 
             number_found = 0
-            if (not (example.is_bad_example)):
+            if (not (example.is_bad_eg)):
                 for word in example.question:
                     if (isinstance(word, numbers.Number)):
                         number_found += 1
@@ -83,7 +83,7 @@ def construct_vocab(data, utility, add_word=False):
                         if (utility.word_ids.has_key(word)):
                             utility.word_count[word] += 1
 
-                for col_name in example.word_column_names:
+                for col_name in example.wd_col_names:
                     for word in col_name:
                         if (isinstance(word, numbers.Number)):
                             number_found += 1
@@ -91,7 +91,7 @@ def construct_vocab(data, utility, add_word=False):
                             if (utility.word_ids.has_key(word)):
                                 utility.word_count[word] += 1
 
-                for col_name in example.number_column_names:
+                for col_name in example.nb_col_names:
                     for word in col_name:
                         if (isinstance(word, numbers.Number)):
                             number_found += 1
