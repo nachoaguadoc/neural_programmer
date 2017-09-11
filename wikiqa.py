@@ -6,7 +6,7 @@ from sys import exit
 from utils.checker import *
 from utils.chars import *
 from utils.helpers import *
-
+import nltk
 import math
 import os
 import re
@@ -194,7 +194,7 @@ class WikiQuestionGenerator(object):
         new_tokens = new_tokens[:-1]
         tar_canon = "UNK"
         q = self.prepro_sentence(new_tokens, ner_tags, ner_values)
-        self.custom_egs[question_id] = WikiExample(q_id, q, tar_canon, context)
+        self.custom_egs[q_id] = WikiExample(q_id, q, tar_canon, context)
         return q
 
 
@@ -252,8 +252,8 @@ class WikiQuestionGenerator(object):
                               if tag[0] not in ['UNK', 'is', 'are']  and tag[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
                                 new_entry.append(tag[0])
                         print("Processing column descriptions:")
-                        print("       Old entry: " + entry)
-                        print("       New entry: " + new_entry)
+                        print("       Old entry: " + str(entry))
+                        print("       New entry: " + str(new_entry))
                         col_desc.append(new_entry)
                     if row == '-1':
                         col_names.append(entry)
@@ -423,7 +423,7 @@ class WikiQuestionGenerator(object):
 
     def load_example(self, q_id, tokens, context):
         q = self.load_custom_data(q_id, tokens, context)
-        example = self.custom_answer_classification(question_id)
+        example = self.custom_answer_classification(q_id)
         return example
 
     def load(self, mode=None, desc=False):

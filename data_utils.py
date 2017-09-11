@@ -193,9 +193,9 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
     for j in range(batch_size):
         feed_examples.append(data[curr + j])
     if train:
-        feed_dict[gr.batch_question] = [word_dropout(feed_examples[j].question, utility) for j in range(batch_size)]
+        feed_dict[gr.batch_question] = [word_dropout(feed_examples[j].q, utility) for j in range(batch_size)]
     else:
-        feed_dict[gr.batch_question] = [feed_examples[j].question for j in range(batch_size)]
+        feed_dict[gr.batch_question] = [feed_examples[j].q for j in range(batch_size)]
 
     feed_dict[gr.batch_question_attention_mask] = [feed_examples[j].question_attention_mask for j in range(batch_size)]
 
@@ -245,7 +245,7 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
 
     feed_dict[gr.batch_number_column_description_lengths] = [feed_examples[j].number_column_description_lengths for j in range(batch_size)]
 
-    feed_dict[gr.batch_processed_word_column] = [feed_examples[j].processed_word_columns for j in range(batch_size)]
+    feed_dict[gr.batch_processed_word_column] = [feed_examples[j].p_wd_cols for j in range(batch_size)]
 
     feed_dict[gr.batch_word_column_mask] = [feed_examples[j].word_column_mask for j in range(batch_size)]
 

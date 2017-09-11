@@ -332,6 +332,8 @@ def complete_wiki_processing(data, utility, key='train'):
                     example.wd_col_desc.append([utility.dummy_token] * utility.FLAGS.max_description)
 
                 seen_tables[example.tb_key] = 1
+            true_mask = [1.] * utility.FLAGS.embedding_dims
+            false_mask = [0.] * utility.FLAGS.embedding_dims
             #convert column and word column names to integers
             example.number_column_ids, example.number_column_name_lengths = convert_to_int_2d_and_pad(example.nb_col_names, utility, utility.FLAGS.max_entry_length, True)
             example.number_column_description_ids, example.number_column_description_lengths = convert_to_int_2d_and_pad(example.nb_col_desc, utility, utility.FLAGS.max_description, True)
