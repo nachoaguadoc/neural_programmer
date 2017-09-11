@@ -388,32 +388,32 @@ class WikiQuestionGenerator(object):
     
     def custom_answer_classification(self, q_id):
 
-    eg = self.custom_egs[q_id]
-    tb_info = self.custom_tbs[eg.tb_key]
-    # Figure out if the answer is numerical or lookup
-    n_cols = len(tb_info.o_cols)
-    n_rows = len(tb_info.o_cols[0])
-    eg.lookup_mat = np.zeros((n_rows, n_cols))
+        eg = self.custom_egs[q_id]
+        tb_info = self.custom_tbs[eg.tb_key]
+        # Figure out if the answer is numerical or lookup
+        n_cols = len(tb_info.o_cols)
+        n_rows = len(tb_info.o_cols[0])
+        eg.lookup_mat = np.zeros((n_rows, n_cols))
 
-    # Split up the lookup matrix into word part and number part
-    nb_col_idx = tb_info.nb_col_idx
-    wd_col_idx = tb_info.wd_col_idx
-    eg.wd_cols = tb_info.wd_cols
-    eg.nb_cols = tb_info.nb_cols
+        # Split up the lookup matrix into word part and number part
+        nb_col_idx = tb_info.nb_col_idx
+        wd_col_idx = tb_info.wd_col_idx
+        eg.wd_cols = tb_info.wd_cols
+        eg.nb_cols = tb_info.nb_cols
 
-    eg.wd_col_idx = tb_info.wd_col_idx
-    eg.wd_col_names = tb_info.wd_col_names
-    eg.wd_col_desc = tb_info.wd_col_desc
-    eg.p_wd_cols = tb_info.p_wd_cols
+        eg.wd_col_idx = tb_info.wd_col_idx
+        eg.wd_col_names = tb_info.wd_col_names
+        eg.wd_col_desc = tb_info.wd_col_desc
+        eg.p_wd_cols = tb_info.p_wd_cols
 
-    eg.nb_col_idx = tb_info.nb_col_idx
-    eg.nb_col_names = tb_info.nb_col_names
-    eg.nb_col_desc = tb_info.nb_col_desc
-    eg.p_nb_cols = tb_info.p_nb_cols
+        eg.nb_col_idx = tb_info.nb_col_idx
+        eg.nb_col_names = tb_info.nb_col_names
+        eg.nb_col_desc = tb_info.nb_col_desc
+        eg.p_nb_cols = tb_info.p_nb_cols
 
-    eg.number_lookup_mat = eg.lookup_mat[:, nb_col_idx]
-    eg.word_lookup_mat = eg.lookup_mat[:, wd_col_idx]
-    return eg
+        eg.number_lookup_mat = eg.lookup_mat[:, nb_col_idx]
+        eg.word_lookup_mat = eg.lookup_mat[:, wd_col_idx]
+        return eg
 
     def load_example(self, q_id, tokens, context):
         q = self.load_custom_data(q_id, tokens, context)
