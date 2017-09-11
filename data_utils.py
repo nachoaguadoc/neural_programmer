@@ -102,23 +102,30 @@ def word_lookup(word, utility):
     return utility.unk_token
 
 
-def convert_to_int_2d_and_pad(a, utility):
-    """
-    trim input based on max length permitted.
-    translate token to index according to dictionary
-    """
+def convert_to_int_2d_and_pad(a, utility, pad_length=None, pad=True):
     ans = []
+    lengths = []
+
     for b in a:
         temp = []
-        if len(b) > utility.FLAGS.max_entry_length:
-            b = b[0:utility.FLAGS.max_entry_length]
-        for remaining in range(len(b), utility.FLAGS.max_entry_length):
-            b.append(utility.dummy_token)
-        assert len(b) == utility.FLAGS.max_entry_length
+        if (len(b) > pad_length):
+            b = b[0:pad_length]
         for word in b:
             temp.append(utility.word_ids[word_lookup(word, utility)])
+        length = len(b)
+        if (pad):
+            dummy_token_id = utility.word_ids[word_lookup(utility.dummy_token, utility)]
+            if len(b) == 0:
+                temp = [dummy_token_id] * pad_length
+                length = 1
+            else:
+                for remaining in range(len(temp), pad_length):
+                    temp.append(dummy_token_id)
+            assert len(temp) == pad_length
+        lengths.append(length)
         ans.append(temp)
-    return ans
+
+    return ans, lengths
 
 
 def convert_to_bool_and_pad(a, utility):
@@ -194,9 +201,9 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
 
     feed_dict[gr.batch_answer] = [feed_examples[j].answer for j in range(batch_size)]
 
-    feed_dict[gr.batch_number_column] = [feed_examples[j].columns for j in range(batch_size)]
+    feed_dict[gr.batch_number_column] = [feed_examples[j].nb_cols for j in range(batch_size)]
 
-    feed_dict[gr.batch_processed_number_column] = [feed_examples[j].processed_number_columns for j in range(batch_size)]
+    feed_dict[gr.batch_processed_number_column] = [feed_examples[j].p_nb_cols for j in range(batch_size)]
 
     feed_dict[gr.batch_processed_sorted_index_number_column] = [feed_examples[j].sorted_number_index for j in range(batch_size)]
 
@@ -217,20 +224,42 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
     feed_dict[gr.batch_group_by_max] = [feed_examples[j].group_by_max for j in range(batch_size)]
 
     feed_dict[gr.batch_column_exact_match] = [feed_examples[j].exact_column_match for j in range(batch_size)]
+    
+    feed_dict[gr.batch_column_description_match] = [feed_examples[j].exact_column_description_match for j in range(batch_size)]
 
     feed_dict[gr.batch_ordinal_question] = [feed_examples[j].ordinal_question for j in range(batch_size)]
 
     feed_dict[gr.batch_ordinal_question_one] = [feed_examples[j].ordinal_question_one for j in range(batch_size)]
 
-    feed_dict[gr.batch_number_column_mask] = [feed_examples[j].column_mask for j in range(batch_size)]
+    feed_dict[gr.batch_number_column_mask] = [feed_examples[j].number_column_mask for j in range(batch_size)]
 
-    feed_dict[gr.batch_number_column_names] = [feed_examples[j].column_ids for j in range(batch_size)]
+    feed_dict[gr.batch_number_column_names] = [feed_examples[j].number_column_ids for j in range(batch_size)]
+
+    feed_dict[gr.batch_number_column_name_mask] = [feed_examples[j].number_column_name_mask for j in range(batch_size)]
+
+    feed_dict[gr.batch_number_column_name_lengths] = [feed_examples[j].number_column_name_lengths for j in range(batch_size)]
+
+    feed_dict[gr.batch_number_column_descriptions] = [feed_examples[j].number_column_description_ids for j in range(batch_size)]
+
+    feed_dict[gr.batch_number_column_description_mask] = [feed_examples[j].number_column_description_mask for j in range(batch_size)]
+
+    feed_dict[gr.batch_number_column_description_lengths] = [feed_examples[j].number_column_description_lengths for j in range(batch_size)]
 
     feed_dict[gr.batch_processed_word_column] = [feed_examples[j].processed_word_columns for j in range(batch_size)]
 
     feed_dict[gr.batch_word_column_mask] = [feed_examples[j].word_column_mask for j in range(batch_size)]
 
     feed_dict[gr.batch_word_column_names] = [feed_examples[j].word_column_ids for j in range(batch_size)]
+
+    feed_dict[gr.batch_word_column_name_mask] = [feed_examples[j].word_column_name_mask for j in range(batch_size)]
+
+    feed_dict[gr.batch_word_column_name_lengths] = [feed_examples[j].word_column_name_lengths for j in range(batch_size)]
+
+    feed_dict[gr.batch_word_column_descriptions] = [feed_examples[j].word_column_description_ids for j in range(batch_size)]
+
+    feed_dict[gr.batch_word_column_description_lengths] = [feed_examples[j].word_column_description_lengths for j in range(batch_size)]
+
+    feed_dict[gr.batch_word_column_description_mask] = [feed_examples[j].word_column_description_mask for j in range(batch_size)]
 
     feed_dict[gr.batch_word_column_entry_mask] = [feed_examples[j].word_column_entry_mask for j in range(batch_size)]
 

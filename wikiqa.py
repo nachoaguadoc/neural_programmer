@@ -46,21 +46,25 @@ class TableInfo(object):
     """
     wd_cols:           word columns
     wd_col_names:      column names in parsed string
+    wd_col_desc:       column descriptions
     wd_col_idx:        index to columns -> [0 ... #cols-1]
     nb_cols:           columns which have numbers in cell
     nb_col_names:      names of columns which have numbers in cell
+    nb_col_desc:       descriptions of columns which have numbers in cell
     nb_col_idx:        index of columns which have numbers in cell
     p_wd_cols:         processed word columns
     p_nb_cols:         processed number columns
     o_cols:            orig columns in raw data
     """
-    def __init__(self, wd_cols, wd_col_names, wd_col_idx, nb_cols, nb_col_names,
-                 nb_col_idx, p_wd_cols, p_nb_cols, o_cols):
+    def __init__(self, wd_cols, wd_col_names, wd_col_desc, wd_col_idx, nb_cols, nb_col_names,
+                 nb_col_desc, nb_col_idx, p_wd_cols, p_nb_cols, o_cols):
         self.wd_cols = wd_cols
         self.wd_col_names = wd_col_names
+        self.wd_col_desc = wd_col_desc
         self.wd_col_idx = wd_col_idx
         self.nb_cols = nb_cols
         self.nb_col_names = nb_col_names
+        self.nb_col_desc = nb_col_desc
         self.nb_col_idx = nb_col_idx
         self.p_wd_cols = p_wd_cols
         self.p_nb_cols = p_nb_cols
@@ -106,6 +110,8 @@ class WikiQuestionGenerator(object):
         self.data_folder = os.path.join(self.root_folder, 'data/annotated/data')
         self.ann_egs = {}
         self.ann_tbs = {}
+        self.custom_egs = {}
+        self.custom_tbs = {}
         self.ann_wd_reject = {}
         self.ann_wd_reject['-lrb-'] = 1
         self.ann_wd_reject['-rrb-'] = 1
@@ -162,11 +168,42 @@ class WikiQuestionGenerator(object):
         print 'Annotated egs loaded', len(self.ann_egs)
         f.close()
 
-    def load_ann_tbs(self):
+    def load_custom_tbs(self):
+        self.custom_tbs = {}
+        self.custom_tbs['csv/custom-csv/uefa.csv'] = []
+        self.custom_tbs['csv/custom-csv/swisscom.csv'] = []
+        print 'Custom tables loaded'
+
+    def load_custom_data(self, q_id, input, context):
+        input = input.replace("?", " ?")
+        input = input.lower()    
+        tokens = input.split(' ')
+        ner_tags = ''
+        ner_values = ''
+        new_tokens = ''
+        for t in tokens:
+            if t.isdigit():
+                ner_tags += 'NUMBER|'
+                ner_values += str(float(t)) + '|'
+            else:
+                ner_tags += 'O|'
+                ner_values += '|'
+            new_tokens += t.encode('utf8') + '|'
+        ner_tags = ner_tags[:-1]
+        ner_values = ner_values[:-1]
+        new_tokens = new_tokens[:-1]
+        tar_canon = "UNK"
+        q = self.prepro_sentence(new_tokens, ner_tags, ner_values)
+        self.custom_egs[question_id] = WikiExample(q_id, q, tar_canon, context)
+        return q
+
+
+    def load_ann_tbs(self, custom=False, desc=False):
         """
         annotated tables keys are contex
         """
-        for table in self.ann_tbs.keys():
+        tables = self.custom_tbs if mode=='custom' else self.ann_tbs
+        for table in tables.keys():
             ann_tb = table.replace('csv', 'annotated')
             o_cols = []
             p_cols = []
@@ -196,9 +233,25 @@ class WikiQuestionGenerator(object):
                 if counter > 0:
                     line = line.strip()
                     line = line + '\t' * (13 - len(line.split('\t')))
-                    row, col, _, _, tokens, _, _,\
+                    row, col, _, content, tokens, _, _,\
                     ner_tags, ner_values, number, _, _, _ = line.split('\t')
+                    if custom:
+                        tokens = '|'.join(nltk.word_tokenize(content))
+                        ner_tags = 'O|' * len(tokens)
+                        ner_tags = ner_tags[:-1]
+                        ner_values = '|' * (len(tokens)-1)
                     entry = self.prepro_sentence(tokens, ner_tags, ner_values)
+                    if row=='-2':
+                        new_entry = []
+                        if desc:
+                            pos_tags = nltk.pos_tag(entry)
+                            for tag in pos_tags:
+                              if tag[0] not in ['UNK', 'is', 'are']  and tag[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
+                                new_entry.append(tag[0])
+                        print("Processing column descriptions:")
+                        print("       Old entry: " + entry)
+                        print("       New entry: " + new_entry)
+                        col_desc.append(new_entry)
                     if row == '-1':
                         col_names.append(entry)
                     else:
@@ -219,12 +272,13 @@ class WikiQuestionGenerator(object):
                             if (len(entry) == 1 and not (is_number(entry[0])) and is_date(entry[0])):
                                 entry[0] = entry[0].replace("X", "x")
                 counter += 1
-            wd_cols, p_wd_cols, wd_col_names, wd_col_idx = [], [], [], []
-            nb_cols, p_nb_cols, nb_col_names, nb_col_idx = [], [], [], []
+            wd_cols, p_wd_cols, wd_col_names, wd_col_idx, wd_col_desc = [], [], [], [], []
+            nb_cols, p_nb_cols, nb_col_names, nb_col_idx, nb_col_desc = [], [], [], [], []
             for i in xrange(max_col + 1):
                 if is_number_column(o_cols[i]):
                     nb_col_idx.append(i)
                     nb_col_names.append(col_names[i])
+                    nb_col_desc.append(col_desc[i])
                     temp = []
                     for w in o_cols[i]:
                         if is_number(w[0]):
@@ -234,12 +288,13 @@ class WikiQuestionGenerator(object):
                 else:
                     wd_col_idx.append(i)
                     wd_col_names.append(col_names[i])
+                    wd_col_desc.append(col_desc[i])
                     wd_cols.append(o_cols[i])
                     p_wd_cols.append(p_cols[i])
 
-            table_info = TableInfo(wd_cols, wd_col_names, wd_col_idx, nb_cols,
-                                   nb_col_names, nb_col_idx, p_wd_cols, p_nb_cols, o_cols)
-            self.ann_tbs[table] = table_info
+            table_info = TableInfo(wd_cols, wd_col_names, wd_col_desc, wd_col_idx, nb_cols,
+                                   nb_col_names, nb_col_desc, nb_col_idx, p_wd_cols, p_nb_cols, o_cols)
+            tables[table] = table_info
             f.close()
 
     def answer_classification(self):
@@ -330,17 +385,51 @@ class WikiQuestionGenerator(object):
             example.nb_col_names = table_info.nb_col_names
             example.number_lookup_mat = example.lookup_mat[:, nb_col_idx]
             example.word_lookup_mat = example.lookup_mat[:, wd_col_idx]
+    
+    def custom_answer_classification(self, q_id):
 
-    def load(self, mode=None, model='baseline'):
+    eg = self.custom_egs[q_id]
+    tb_info = self.custom_tbs[eg.tb_key]
+    # Figure out if the answer is numerical or lookup
+    n_cols = len(tb_info.o_cols)
+    n_rows = len(tb_info.o_cols[0])
+    eg.lookup_mat = np.zeros((n_rows, n_cols))
+
+    # Split up the lookup matrix into word part and number part
+    nb_col_idx = tb_info.nb_col_idx
+    wd_col_idx = tb_info.wd_col_idx
+    eg.wd_cols = tb_info.wd_cols
+    eg.nb_cols = tb_info.nb_cols
+
+    eg.wd_col_idx = tb_info.wd_col_idx
+    eg.wd_col_names = tb_info.wd_col_names
+    eg.wd_col_desc = tb_info.wd_col_desc
+    eg.p_wd_cols = tb_info.p_wd_cols
+
+    eg.nb_col_idx = tb_info.nb_col_idx
+    eg.nb_col_names = tb_info.nb_col_names
+    eg.nb_col_desc = tb_info.nb_col_desc
+    eg.p_nb_cols = tb_info.p_nb_cols
+
+    eg.number_lookup_mat = eg.lookup_mat[:, nb_col_idx]
+    eg.word_lookup_mat = eg.lookup_mat[:, wd_col_idx]
+    return eg
+
+    def load_example(self, q_id, tokens, context):
+        q = self.load_custom_data(q_id, tokens, context)
+        example = self.custom_answer_classification(question_id)
+        return example
+
+    def load(self, mode=None, desc=False):
         train_data = []
         dev_data = []
         test_data = []
         self.load_ann_data(os.path.join(self.data_folder, "training.annotated"))
-        self.load_ann_tbs()
+        self.load_ann_tbs(False, False)
 
-        # if (mode=='demo-console' or mode=='demo-visual' or mode=='custom-test'):
-        #     self.load_custom_data()
-        #     self.load_custom_tables(model)
+        if (mode=='demo-console' or mode=='demo-visual' or mode=='custom-test'):
+             self.load_custom_tbs()
+             self.load_ann_tbs(True, desc)
 
         self.answer_classification()
         self.train_loader.load()

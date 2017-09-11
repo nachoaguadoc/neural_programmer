@@ -23,9 +23,10 @@ from random import Random
 import numpy as np
 import tensorflow as tf
 import model
-import wiki_data
+import wikiqa
 import parameters
 import data_utils
+import masking
 import socket
 import config
 
@@ -115,7 +116,8 @@ def main(args):
 
     #Load the training, validation and test data
     dat = wiki_data.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
-    train_data, dev_data, test_data = dat.load(FLAGS.mode, FLAGS.model)
+    desc = True if FLAGS.model == 'column_description' else False
+    train_data, dev_data, test_data = dat.load(FLAGS.mode, desc)
 
     # Construct the vocabulary
     utility.words = []
