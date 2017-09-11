@@ -70,13 +70,13 @@ def construct_vocab(data, utility, add_word=False):
             example.original_wc = copy.deepcopy(example.wd_cols)
             example.original_nc_names = copy.deepcopy(example.nb_col_names)
             example.original_wc_names = copy.deepcopy(example.wd_col_names)
-            
+
             if (add_word):
                 continue
 
             number_found = 0
             if (not (example.is_bad_eg)):
-                for word in example.question:
+                for word in example.q:
                     if (isinstance(word, numbers.Number)):
                         number_found += 1
                     else:
@@ -97,9 +97,9 @@ def construct_vocab(data, utility, add_word=False):
                             number_found += 1
                         else:
                             if (utility.word_ids.has_key(word)):
-                                utility.word_count[word] += 1 
+                                utility.word_count[word] += 1
 
-    elif (utility.FLAGS.word_embeddings == 'custom'):  
+    elif (utility.FLAGS.word_embeddings == 'custom'):
         ans = []
         for example in data:
             sent = ""
@@ -280,7 +280,7 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
     feed_dict[gr.batch_group_by_max] = [feed_examples[j].group_by_max for j in range(batch_size)]
 
     feed_dict[gr.batch_column_exact_match] = [feed_examples[j].exact_column_match for j in range(batch_size)]
-    
+
     feed_dict[gr.batch_column_description_match] = [feed_examples[j].exact_column_description_match for j in range(batch_size)]
 
     feed_dict[gr.batch_ordinal_question] = [feed_examples[j].ordinal_question for j in range(batch_size)]

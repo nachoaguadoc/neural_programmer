@@ -176,7 +176,7 @@ class WikiQuestionGenerator(object):
 
     def load_custom_data(self, q_id, input, context):
         input = input.replace("?", " ?")
-        input = input.lower()    
+        input = input.lower()
         tokens = input.split(' ')
         ner_tags = ''
         ner_values = ''
@@ -391,7 +391,7 @@ class WikiQuestionGenerator(object):
             example.nb_col_desc = table_info.nb_col_desc
             example.p_nb_cols = table_info.p_nb_cols
             example.number_lookup_mat = example.lookup_mat[:, nb_col_idx]
-    
+
     def custom_answer_classification(self, q_id):
 
         eg = self.custom_egs[q_id]
@@ -459,12 +459,13 @@ class WikiQuestionGenerator(object):
 
         return train_data, dev_data, test_data
 
+obj = WikiQuestionGenerator('random-split-1-train.examples', \
+                            'random-split-1-dev.examples', \
+                            'pristine-unseen-tables.examples', './')
+train, dev, test = obj.load()
+save_to(train, './p_data'+'/_train.pkl')
+save_to(dev, './p_data'+'/_dev.pkl')
+save_to(test, './p_data'+'/_test.pkl')
+
 if __name__ == '__main__':
-    obj = WikiQuestionGenerator('random-split-1-train.examples', \
-                                'random-split-1-dev.examples', \
-                                'pristine-unseen-tables.examples', './')
-    train, dev, test = obj.load()
-    save_to(train, './p_data'+'/_train.pkl')
-    save_to(dev, './p_data'+'/_dev.pkl')
-    save_to(test, './p_data'+'/_test.pkl')
-    print train[0].wd_cols
+    pass
