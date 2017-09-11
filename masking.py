@@ -167,7 +167,8 @@ def check_processed_cols(col, utility):
     return True in [True for y in col if (y != utility.FLAGS.pad_int and y != utility.FLAGS.bad_number_pre_process)]
 
 
-def complete_wiki_processing(data, utility, train=True):
+def complete_wiki_processing(data, utility, key='train'):
+    train = True if key=='train' else False
     processed_data = []
     num_bad_examples = 0
     for example in data:
