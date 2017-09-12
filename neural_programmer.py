@@ -29,6 +29,7 @@ import data_utils
 import masking
 import socket
 import config
+import cPickle as pickle
 
 # Define the parameters for the preprocessing and running the model
 
@@ -140,6 +141,11 @@ def main(args):
     print("     Number of validation examples " + str(len(dev_data)))
     print("     Number of test examples " + str(len(test_data)))
 
+    table_file_name = FLAGS.data_dir + "preprocessed_data/annotated_tables.pkl"
+    if not os.path.isfile(table_file_name):
+        tables = dat.ann_tbs
+        with open(table_file_name, 'wb') as f:
+            pickle.dump(tables, f)
     #construct TF graph and train or evaluate
     master(train_data, dev_data, utility, dat)
 
