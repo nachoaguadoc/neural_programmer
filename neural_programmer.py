@@ -30,7 +30,7 @@ import masking
 import socket
 import config
 import cPickle as pickle
-
+import os.path
 # Define the parameters for the preprocessing and running the model
 
 tf.flags.DEFINE_integer("train_steps", 100000, "Number of steps to train")
@@ -43,7 +43,7 @@ tf.flags.DEFINE_string("model", "baseline", "Eval with baseline/column_descripti
 tf.flags.DEFINE_string("output_dir", "model/embeddings/", "Path where the trained model will be saved")
 tf.flags.DEFINE_string("model_id", "96500", "ID of the checkpoint to retrieve for testing")
 tf.flags.DEFINE_string("data_dir", "data/", "Path where the data is stored")
-tf.flags.DEFINE_boolean("reload", False, "Remove existing data and preprocess again")
+tf.flags.DEFINE_string("preprocessed", "dummy", "Path containing file with training, testing, dev and utility data")
 
 tf.flags.DEFINE_integer("max_elements", 100, "Maximum rows that are considered for processing")
 tf.flags.DEFINE_integer("max_description", 100, "Maximum words that are considered for the description")
@@ -111,46 +111,50 @@ class Utility:
 
 
 def main(args):
-    utility = Utility()
-    train_name = "random-split-1-train.examples"
-    dev_name = "random-split-1-dev.examples"
-    test_name = "pristine-unseen-tables.examples"
    
     #Load the training, validation and test data
     dat = wikiqa.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
-    desc = True if FLAGS.model == 'column_description' else False
-    pre_file_name = os.path.join(self.data_folder, "/_preprocessed.pkl")
-    if FLAGS.reload or not os.path.isfile(pre_file_name):
-        print("Starting preprocessing from scratch")
-        train_data, dev_data, test_data = dat.load(FLAGS.mode, desc)
-        preprocessed = (train_data, dev_data, test_data)
-        with open(pre_file_name, 'wb') as f:
-            pickle.dump(preprocessed, f)
-    else:
+    pre_file_name = FLAGS.data_dir + "preprocessed_data/preprocessed_" + FLAGS.preprocessed + ".pkl"
+    if os.path.isfile(pre_file_name):
         print("Loading existing preprocessed data")
         with open(pre_file_name, 'rb') as f:
-            train_data, dev_data, test_data = pickle.load(f)
+            train_data, dev_data, test_data, utility, dat, flags_info = pickle.load(f)
+        print("Loaded data with the following flags:")
+        print(flags_info)
+    else:
+        print("Starting preprocessing from scratch")
+        utility = Utility()
+        train_name = "random-split-1-train.examples"
+        dev_name = "random-split-1-dev.examples"
+        test_name = "pristine-unseen-tables.examples"
+        
+        desc = True if FLAGS.model == 'column_description' else False
+        train_data, dev_data, test_data = dat.load(FLAGS.mode, desc)
 
-    # Construct the vocabulary
-    utility.words = []
-    utility.word_ids = {}
-    utility.reverse_word_ids = {}
+        # Construct the vocabulary
+        utility.words = []
+        utility.word_ids = {}
+        utility.reverse_word_ids = {}
 
-    data_utils.construct_vocab(train_data, utility)
-    data_utils.construct_vocab(dev_data, utility, True)
-    data_utils.construct_vocab(test_data, utility, True)
-    data_utils.add_special_words(utility)
-    #data_utils.perform_word_cutoff(utility)
+        data_utils.construct_vocab(train_data, utility)
+        data_utils.construct_vocab(dev_data, utility, True)
+        data_utils.construct_vocab(test_data, utility, True)
+        data_utils.add_special_words(utility)
+        #data_utils.perform_word_cutoff(utility)
 
+        train_data = masking.complete_wiki_processing(train_data, utility, 'train')
+        dev_data = masking.complete_wiki_processing(dev_data, utility, 'error-test')
+        test_data = masking.complete_wiki_processing(test_data, utility, 'error-test')
 
-    train_data = masking.complete_wiki_processing(train_data, utility, 'train')
-    dev_data = masking.complete_wiki_processing(dev_data, utility, 'error-test')
-    #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
+        print("Preprocessing finished:")
+        print("     Number of train examples " + str(len(train_data)))
+        print("     Number of validation examples " + str(len(dev_data)))
+        print("     Number of test examples " + str(len(test_data)))
 
-    print("Preprocessing finished:")
-    print("     Number of train examples " + str(len(train_data)))
-    print("     Number of validation examples " + str(len(dev_data)))
-    print("     Number of test examples " + str(len(test_data)))
+        preprocessed = (train_data, dev_data, test_data, utility, dat, FLAGS)
+        with open(pre_file_name, 'wb') as f:
+            pickle.dump(preprocessed, f)
+        print("Preprocessed data saved to " + pre_file_name)
 
     #construct TF graph and train or evaluate
     master(train_data, dev_data, utility, dat)
