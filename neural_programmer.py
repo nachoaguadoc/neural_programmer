@@ -29,6 +29,7 @@ import data_utils
 import masking
 import socket
 import config
+import cPickle as pickle
 
 # Define the parameters for the preprocessing and running the model
 
@@ -42,6 +43,7 @@ tf.flags.DEFINE_string("model", "baseline", "Eval with baseline/column_descripti
 tf.flags.DEFINE_string("output_dir", "model/embeddings/", "Path where the trained model will be saved")
 tf.flags.DEFINE_string("model_id", "96500", "ID of the checkpoint to retrieve for testing")
 tf.flags.DEFINE_string("data_dir", "data/", "Path where the data is stored")
+tf.flags.DEFINE_boolean("reload", False, "Remove existing data and preprocess again")
 
 tf.flags.DEFINE_integer("max_elements", 100, "Maximum rows that are considered for processing")
 tf.flags.DEFINE_integer("max_description", 100, "Maximum words that are considered for the description")
@@ -113,11 +115,21 @@ def main(args):
     train_name = "random-split-1-train.examples"
     dev_name = "random-split-1-dev.examples"
     test_name = "pristine-unseen-tables.examples"
-
+   
     #Load the training, validation and test data
     dat = wikiqa.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
     desc = True if FLAGS.model == 'column_description' else False
-    train_data, dev_data, test_data = dat.load(FLAGS.mode, desc)
+    pre_file_name = os.path.join(self.data_folder, "/_preprocessed.pkl")
+    if FLAGS.reload or not os.path.isfile(pre_file_name):
+        print("Starting preprocessing from scratch")
+        train_data, dev_data, test_data = dat.load(FLAGS.mode, desc)
+        preprocessed = (train_data, dev_data, test_data)
+        with open(pre_file_name, 'wb') as f:
+            pickle.dump(preprocessed, f)
+    else:
+        print("Loading existing preprocessed data")
+        with open(pre_file_name, 'rb') as f:
+            train_data, dev_data, test_data = pickle.load(f)
 
     # Construct the vocabulary
     utility.words = []

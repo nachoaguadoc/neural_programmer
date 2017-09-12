@@ -12,7 +12,6 @@ import os
 import re
 import numpy as np
 import tensorflow as tf
-import cPickle as pickle
 
 class WikiExample(object):
     """
@@ -458,14 +457,5 @@ class WikiQuestionGenerator(object):
             test_data.append(self.ann_egs[example])
 
         return train_data, dev_data, test_data
-
-obj = WikiQuestionGenerator('random-split-1-train.examples', \
-                            'random-split-1-dev.examples', \
-                            'pristine-unseen-tables.examples', './')
-train, dev, test = obj.load()
-save_to(train, './p_data'+'/_train.pkl')
-save_to(dev, './p_data'+'/_dev.pkl')
-save_to(test, './p_data'+'/_test.pkl')
-
 if __name__ == '__main__':
     pass
