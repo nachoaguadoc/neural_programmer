@@ -188,7 +188,7 @@ class Graph():
       'geq': curr_geq_question_number,
       'leq': curr_leq_question_number
     }
-    self.debug_word_match = self.batch_exact_match.eval()
+    self.debug_word_match = self.batch_exact_match
     return curr_greater_question_number, curr_lesser_question_number, curr_geq_question_number, curr_leq_question_number
 
   def perform_attention(self, context_vector, hidden_vectors, length, mask):

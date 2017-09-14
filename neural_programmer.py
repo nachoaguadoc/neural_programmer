@@ -491,7 +491,7 @@ def get_steps(sess, data, graph, utility):
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
     number_comp = steps['number_comp']
-    word_match = steps['word_match']
+    word_match = steps['word_match'].eval(session=sess)
     certainty = 0
     print("-------------- New question --------------")
     print("Number comp:")
