@@ -28,7 +28,7 @@ class Graph():
     self.debug_rows = []
     self.debug_soft_ops = []
     self.debug_soft_cols = []
-
+    self.debug_number_comp = {}
     self.utility = utility
     self.data_type = self.utility.tf_data_type[self.utility.FLAGS.data_type]
     self.max_elements = self.utility.FLAGS.max_elements
@@ -181,6 +181,12 @@ class Graph():
     curr_lesser_question_number = compute_question_number("lesser")
     curr_geq_question_number = compute_question_number("geq")
     curr_leq_question_number = compute_question_number("leq")
+    self.debug_number_comp = {
+      'greater': curr_greater_question_number,
+      'lesser': curr_lesser_question_number,
+      'geq': curr_geq_question_number,
+      'leq': curr_leq_question_number
+    }
     return curr_greater_question_number, curr_lesser_question_number, curr_geq_question_number, curr_leq_question_number
 
   def perform_attention(self, context_vector, hidden_vectors, length, mask):
@@ -600,7 +606,7 @@ class Graph():
     return (self.scalar_output, self.batch_lookup_answer)  
 
   def get_steps(self):
-    debug = {'ops': self.debug_ops, 'cols': self.debug_cols, 'rows': self.debug_rows, 'soft_ops': self.debug_soft_ops, 'soft_cols': self.debug_soft_cols}
+    debug = {'ops': self.debug_ops, 'cols': self.debug_cols, 'rows': self.debug_rows, 'soft_ops': self.debug_soft_ops, 'soft_cols': self.debug_soft_cols, 'number_comp': self.debug_number_comp}
     return debug
     
   def compute_error(self):

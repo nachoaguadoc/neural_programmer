@@ -490,6 +490,7 @@ def get_steps(sess, data, graph, utility):
     rows = steps['rows']
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
+    number_comp = steps['number_comp']
     certainty = 0
     print("-------------- New question --------------")
     # Debugging step by step
