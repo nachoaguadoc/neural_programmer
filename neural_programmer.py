@@ -491,8 +491,13 @@ def get_steps(sess, data, graph, utility):
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
     number_comp = steps['number_comp']
+    word_match = steps['word_match']
     certainty = 0
     print("-------------- New question --------------")
+    print("Number comp:")
+    print(number_comp)
+    print("Word match:")
+    print(word_match)
     # Debugging step by step
     for i in range(len(ops)):
         step =  {
