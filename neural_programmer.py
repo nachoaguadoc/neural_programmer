@@ -424,9 +424,10 @@ def demo(graph, utility, sess, model_dir, dat, mode):
 
 def get_prediction(sess, data, graph, utility, dat):
 
-    debugging = get_steps(sess, data, graph, utility)
     table_key = data[0].tb_key
-    answers = sess.run([graph.answers], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))[0]
+    answers, steps = sess.run([graph.answers, graph.steps], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
+    debugging = process_steps(sess, data, graph, utility, steps)
+
     scalar_answer = answers[0][0]
     lookup_answer = answers[1][0]
 
@@ -467,7 +468,7 @@ def get_prediction(sess, data, graph, utility, dat):
     debugging['answer_neural'].append(int(scalar_answer))
     return (str(scalar_answer), debugging)
 
-def get_steps(sess, data, graph, utility):
+def process_steps(sess, data, graph, utility, steps):
     debugging =  {
         'question': '',
         'table_key': '',
@@ -484,7 +485,6 @@ def get_steps(sess, data, graph, utility):
         'certainty': 0.0
     }
 
-    steps = sess.run([graph.steps], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))[0]
     ops = steps['ops']
     cols = steps['cols']
     rows = steps['rows']
