@@ -111,9 +111,9 @@ class Utility:
 
 def main(args):
     utility = Utility()
-    train_name = "random-split-1-train.examples"
-    dev_name = "random-split-1-dev.examples"
-    test_name = "pristine-unseen-tables.examples"
+    train_name = "empty.examples"
+    dev_name = "random-split-1-train.examples"
+    test_name = "pristine-seen-tables.examples"
 
     #Load the training, validation and test data
     dat = wikiqa.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
@@ -126,7 +126,7 @@ def main(args):
     utility.reverse_word_ids = {}
 
     data_utils.construct_vocab(train_data, utility)
-    data_utils.construct_vocab(dev_data, utility, True)
+    data_utils.construct_vocab(dev_data, utility)
     data_utils.construct_vocab(test_data, utility, True)
     data_utils.add_special_words(utility)
     #data_utils.perform_word_cutoff(utility)
@@ -203,29 +203,26 @@ def master(train_data, dev_data, utility, dat):
             testing_accuracy = []
             for model_file in file_list:
                 model_file = model_file[1]
-                print("Restoring file" + model_file)
+                print("Restoring file " + model_file)
                 saver.restore(sess, model_dir + model_file)
                 model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
-                print("Evaluating model " + model_file + " " + model_step)
-                accuracy, debugging = test(sess, dev_data, batch_size, graph, model_step)
+                print("Evaluating model " + model_file + " " + str(model_step))
+                accuracy, debugging = test(sess, dev_data, utility, batch_size, graph, model_step)
                 testing_accuracy.append(accuracy)
 
             text_file = open(model_dir + "testing_accuracy.txt", "w")
             text_file.write(str(testing_accuracy))
             text_file.close()
         elif key == 'data-augm':
-            print("Restoring file" + model_file)
+            print("Restoring file " + model_file)
             saver.restore(sess, model_dir + model_file)
             model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
-            print("Evaluating model " + model_file + " " + model_step)
-            accuracy, debugging = test(sess, dev_data, batch_size, graph, model_step)
-            testing_accuracy.append(accuracy)
+            print("Evaluating model " + model_file + " " + str(model_step))
+            n_examples = test(sess, dev_data, utility, batch_size, graph, model_step, False)
+            print("Total number of examples", str(n_examples))
 
-            text_file = open(model_dir + "testing_accuracy.txt", "w")
-            text_file.write(str(testing_accuracy))
-            text_file.close()
         elif key == 'train':
             ckpt = tf.train.get_checkpoint_state(model_dir)
             if not (tf.gfile.IsDirectory(utility.FLAGS.output_dir)):
@@ -318,7 +315,7 @@ def predict(sess, data, answers, batch_size, graph, table_key, dat):
     return final_predictions
 
 # Evaluate the accuracy of the model with the given data (normally validation set)
-def test(sess, data, batch_size, graph, i, accuracy=True):
+def test(sess, data, utility, batch_size, graph, i, accuracy=True):
     if accuracy:
         num_examples = 0.0
         gc = 0.0
@@ -333,18 +330,20 @@ def test(sess, data, batch_size, graph, i, accuracy=True):
     else:
         num_examples = 0.0
         correct_data = []
-
+        model_dir = utility.FLAGS.output_dir + "/model_" + utility.FLAGS.job_id + "/"
         for j in range(0, len(data) - batch_size + 1, batch_size):
-            correct, debugging = sess.run([graph.final_correct, graph.steps], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
+            correct, steps = sess.run([graph.final_correct, graph.steps], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
             if correct > 0:
-                # WRITE HERE THE JSON DEBUG FILE
+                debugging = process_steps(sess, [data[j]], graph, utility, steps)
+                if debugging == None:
+                    continue
                 correct_data.append(debugging)
                 num_examples += batch_size
                 if num_examples%50==0:
-                    print("Correct sentences added:", str(num_examples))
-                data_file = open(model_dir + "data_augmentation.json", "w")
-                data_file.write(str(correct_data))
-                data_file.close()
+                    print("Correct sentences added:", str(num_examples), "out of", str(j), "examples")
+                    data_file = open(model_dir + "data_augmentation.json", "w")
+                    data_file.write(str(correct_data))
+                    data_file.close()
         return num_examples
 
 # Train the model
@@ -498,8 +497,9 @@ def get_prediction(sess, data, graph, utility, dat):
 
 def process_steps(sess, data, graph, utility, steps):
     debugging =  {
-        'question': '',
-        'table_key': '',
+        'question_id': data[0].q_id,
+        'question': data[0].q,
+        'table_key': data[0].tb_key,
         'correct': True,
         'threshold': FLAGS.certainty_threshold,
         'steps': [],
@@ -512,7 +512,7 @@ def process_steps(sess, data, graph, utility, steps):
         'below_threshold': False,
         'certainty': 0.0
     }
-
+    
     ops = steps['ops']
     cols = steps['cols']
     rows = steps['rows']
@@ -521,11 +521,11 @@ def process_steps(sess, data, graph, utility, steps):
     number_comp = steps['number_comp']
     word_match = steps['word_match']
     certainty = 0
-    print("-------------- New question --------------")
-    print("Number comp:")
-    print(number_comp)
-    print("Word match:")
-    print(np.where(word_match==1.0))
+    #print("-------------- New question --------------")
+    #print("Number comp:")
+    #print(number_comp)
+    #print("Word match:")
+    #print(np.where(word_match==1.0))
     # Debugging step by step
     for i in range(len(ops)):
         step =  {
@@ -545,14 +545,19 @@ def process_steps(sess, data, graph, utility, steps):
         step['operation_softmax'] = soft_ops[i][0][step['operation_index']]
 
         col_index = np.where(cols[i] == 1)[1][0]
-
         if col_index < 15:
             col_real_index = col_index
             col = data[0].nb_col_names[col_real_index]
+            if col_real_index >= len(data[0].nb_col_idx):
+                print("Wrong example")
+                return None
             step['column_index'] = data[0].nb_col_idx[col_real_index]
         else:
             col_real_index = col_index - 15
             col = data[0].wd_col_names[col_real_index]
+            if col_real_index >= len(data[0].wd_col_idx):
+                print("Wrong example")
+                return None
             step['column_index'] = data[0].wd_col_idx[col_real_index]
 
         step['column_name'] = " ".join([str(j) for j in col if j!="dummy_token"])
@@ -565,7 +570,7 @@ def process_steps(sess, data, graph, utility, steps):
         certainty_step = step['operation_softmax'] * step['column_softmax']
         certainty += certainty_step
 
-        print("STEP " + str(i) + " : Performed operation <" + step['operation_name'] + "> (" + str(step['operation_softmax']) + ") over the column <" + step['column_name'] + "> (" + str(step['column_softmax']) + ")")
+        #print("STEP " + str(i) + " : Performed operation <" + step['operation_name'] + "> (" + str(step['operation_softmax']) + ") over the column <" + step['column_name'] + "> (" + str(step['column_softmax']) + ")")
 
     certainty = (certainty / len(ops)) * 100
     debugging['certainty'] = certainty
@@ -575,7 +580,7 @@ def process_steps(sess, data, graph, utility, steps):
         debugging['below_threshold'] = True
         to_log += " (Below threshold of " + str(FLAGS.certainty_threshold) + "%)"
 
-    print("-------------------------------------------")
+    #print("-------------------------------------------")
 
     return debugging
 
