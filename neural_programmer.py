@@ -30,7 +30,7 @@ import masking
 import socket
 import config
 import cPickle as pickle
-
+import os
 # Define the parameters for the preprocessing and running the model
 
 tf.flags.DEFINE_integer("train_steps", 100000, "Number of steps to train")
@@ -208,13 +208,24 @@ def master(train_data, dev_data, utility, dat):
                 model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
                 print("Evaluating model " + model_file + " " + model_step)
-                accuracy = test(sess, dev_data, batch_size, graph, model_step)
+                accuracy, debugging = test(sess, dev_data, batch_size, graph, model_step)
                 testing_accuracy.append(accuracy)
 
             text_file = open(model_dir + "testing_accuracy.txt", "w")
             text_file.write(str(testing_accuracy))
             text_file.close()
+        elif key == 'data-augm':
+            print("Restoring file" + model_file)
+            saver.restore(sess, model_dir + model_file)
+            model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
+            print("Evaluating model " + model_file + " " + model_step)
+            accuracy, debugging = test(sess, dev_data, batch_size, graph, model_step)
+            testing_accuracy.append(accuracy)
+
+            text_file = open(model_dir + "testing_accuracy.txt", "w")
+            text_file.write(str(testing_accuracy))
+            text_file.close()
         elif key == 'train':
             ckpt = tf.train.get_checkpoint_state(model_dir)
             if not (tf.gfile.IsDirectory(utility.FLAGS.output_dir)):
@@ -307,17 +318,34 @@ def predict(sess, data, answers, batch_size, graph, table_key, dat):
     return final_predictions
 
 # Evaluate the accuracy of the model with the given data (normally validation set)
-def test(sess, data, batch_size, graph, i):
-    num_examples = 0.0
-    gc = 0.0
+def test(sess, data, batch_size, graph, i, accuracy=True):
+    if accuracy:
+        num_examples = 0.0
+        gc = 0.0
 
-    for j in range(0, len(data) - batch_size + 1, batch_size):
-        [ct] = sess.run([graph.final_correct], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
-        gc += ct * batch_size
-        num_examples += batch_size
-    accuracy = gc / num_examples
-    print "Accuracy after ", i, " iterations: ", accuracy
-    return accuracy
+        for j in range(0, len(data) - batch_size + 1, batch_size):
+            [ct] = sess.run([graph.final_correct], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
+            gc += ct * batch_size
+            num_examples += batch_size
+        accuracy = gc / num_examples
+        print "Accuracy after ", i, " iterations: ", accuracy
+        return accuracy
+    else:
+        num_examples = 0.0
+        correct_data = []
+
+        for j in range(0, len(data) - batch_size + 1, batch_size):
+            correct, debugging = sess.run([graph.final_correct, graph.steps], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
+            if correct > 0:
+                # WRITE HERE THE JSON DEBUG FILE
+                correct_data.append(debugging)
+                num_examples += batch_size
+                if num_examples%50==0:
+                    print("Correct sentences added:", str(num_examples))
+                data_file = open(model_dir + "data_augmentation.json", "w")
+                data_file.write(str(correct_data))
+                data_file.close()
+        return num_examples
 
 # Train the model
 def train(graph, utility, batch_size, train_data, sess, model_dir,
