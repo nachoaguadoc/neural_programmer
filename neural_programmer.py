@@ -313,8 +313,8 @@ def test(sess, data, batch_size, graph, i):
 
     for j in range(0, len(data) - batch_size + 1, batch_size):
         [ct] = sess.run([graph.final_correct], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
-    gc += ct * batch_size
-    num_examples += batch_size
+        gc += ct * batch_size
+        num_examples += batch_size
     accuracy = gc / num_examples
     print "Accuracy after ", i, " iterations: ", accuracy
     return accuracy
@@ -491,13 +491,13 @@ def process_steps(sess, data, graph, utility, steps):
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
     number_comp = steps['number_comp']
-    word_match = steps['word_match'].eval(session=sess)
+    word_match = steps['word_match']
     certainty = 0
     print("-------------- New question --------------")
     print("Number comp:")
     print(number_comp)
     print("Word match:")
-    print(word_match)
+    print(np.where(word_match==1.0))
     # Debugging step by step
     for i in range(len(ops)):
         step =  {
