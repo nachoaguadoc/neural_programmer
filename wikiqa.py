@@ -27,9 +27,10 @@ class WikiExample(object):
     is_nb_calc:        is number calc
     is_ukw_a:          is unknown answer
     """
-    def __init__(self, id, q, a, tb_key):
+    def __init__(self, id, q, a, tb_key, q_og):
         self.q_id = id
         self.q = q
+        self.q_og = q_og
         self.a = a
         self.tb_key = tb_key
         self.lookup_mat = []
@@ -161,7 +162,7 @@ class WikiQuestionGenerator(object):
                 q_id, utt, context, tar_val, tokens,_, _, ner_tags, ner_values, tar_canon = line.split('\t')
                 q = self.prepro_sentence(tokens, ner_tags, ner_values)
                 tar_canon = tar_canon.split('|')
-                self.ann_egs[q_id] = WikiExample(q_id, q, tar_canon, context)
+                self.ann_egs[q_id] = WikiExample(q_id, q, tar_canon, context, utt)
                 self.ann_tbs[context] = []
             counter += 1
         print 'Annotated egs loaded', len(self.ann_egs)
@@ -173,8 +174,8 @@ class WikiQuestionGenerator(object):
         self.custom_tbs['csv/custom-csv/swisscom.csv'] = []
         print 'Custom tables loaded'
 
-    def load_custom_data(self, q_id, input, context):
-        input = input.replace("?", " ?")
+    def load_custom_data(self, q_id, input_og, context):
+        input = input_og.replace("?", " ?")
         input = input.lower()
         tokens = input.split(' ')
         ner_tags = ''
@@ -193,7 +194,7 @@ class WikiQuestionGenerator(object):
         new_tokens = new_tokens[:-1]
         tar_canon = "UNK"
         q = self.prepro_sentence(new_tokens, ner_tags, ner_values)
-        self.custom_egs[q_id] = WikiExample(q_id, q, tar_canon, context)
+        self.custom_egs[q_id] = WikiExample(q_id, q, tar_canon, context, input_og)
         return q
 
 
