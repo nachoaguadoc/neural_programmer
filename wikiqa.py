@@ -161,9 +161,11 @@ class WikiQuestionGenerator(object):
         for line in f:
             if counter > 0:
                 line = line.strip()
-                q_id, utt, context, tar_val, tokens,_, pos_tags, ner_tags, ner_values, tar_canon = line.split('\t')
+                q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon = line.split('\t')
                 q = self.prepro_sentence(tokens, ner_tags, ner_values)
                 sim_tokens = []
+                pos_tags = pos_string.split('|')
+                print(pos_tags)
                 for i in range(len(pos_tags)):
                     tag = pos_tags[i]
                     if tag in ["NN", "NNS", "NNP", "JJ"]:
