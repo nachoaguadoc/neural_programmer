@@ -20,6 +20,7 @@ class WikiExample(object):
     a:                 answer
     tb_key:            table key
     lookup_mat:        lookup matrix
+    sim_tokens:        list of tokens that will be used for similarity search
     is_bad_eg:         is bad example
     is_wd_lookup:      is word lookup
     is_ambi_wd_lookup: is ambiguous word lookup
@@ -27,12 +28,13 @@ class WikiExample(object):
     is_nb_calc:        is number calc
     is_ukw_a:          is unknown answer
     """
-    def __init__(self, id, q, a, tb_key, q_og):
+    def __init__(self, id, q, a, tb_key, q_og, sim_tokens):
         self.q_id = id
         self.q = q
         self.q_og = q_og
         self.a = a
         self.tb_key = tb_key
+        self.sim_tokens = sim_tokens
         self.lookup_mat = []
         self.is_bad_eg = False
         self.is_wd_lookup = False
@@ -160,10 +162,18 @@ class WikiQuestionGenerator(object):
         for line in f:
             if counter > 0:
                 line = line.strip()
-                q_id, utt, context, tar_val, tokens,_, _, ner_tags, ner_values, tar_canon = line.split('\t')
+                q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon = line.split('\t')
                 q = self.prepro_sentence(tokens, ner_tags, ner_values)
+                sim_tokens = []
+                pos_tags = pos_string.split('|')
+                print(pos_tags)
+                for i in range(len(pos_tags)):
+                    tag = pos_tags[i]
+                    if tag in ["NN", "NNS", "NNP", "JJ"]:
+                        sim_tokens.append(tokens[i])
+
                 tar_canon = tar_canon.split('|')
-                self.ann_egs[q_id] = WikiExample(q_id, q, tar_canon, context, utt)
+                self.ann_egs[q_id] = WikiExample(q_id, q, tar_canon, context, utt, sim_tokens)
                 self.ann_tbs[context] = []
             counter += 1
         print 'Annotated egs loaded', len(self.ann_egs)
@@ -194,8 +204,7 @@ class WikiQuestionGenerator(object):
         ner_values = ner_values[:-1]
         new_tokens = new_tokens[:-1]
         tar_canon = "UNK"
-        q = self.prepro_sentence(new_tokens, ner_tags, ner_values)
-        self.custom_egs[q_id] = WikiExample(q_id, q, tar_canon, context, input_og)
+        self.custom_egs[q_id] = WikiExample(q_id, q, tar_canon, context, input_og, [])
         return q
 
 
