@@ -2,7 +2,7 @@
 
 from __future__ import division
 from sys import exit
-
+import copy
 from utils.checker import *
 from utils.chars import *
 from utils.helpers import *
@@ -110,6 +110,7 @@ class WikiQuestionGenerator(object):
         self.data_folder = os.path.join(self.root_folder, 'annotated/data')
         self.ann_egs = {}
         self.ann_tbs = {}
+        self.final_ann_tbs = {}
         self.custom_egs = {}
         self.custom_tbs = {}
         self.ann_wd_reject = {}
@@ -432,11 +433,10 @@ class WikiQuestionGenerator(object):
         test_data = []
         self.load_ann_data(os.path.join(self.data_folder, "training.annotated"))
         self.load_ann_tbs(False, False)
-
         if (mode=='demo-console' or mode=='demo-visual' or mode=='custom-test'):
              self.load_custom_tbs()
              self.load_ann_tbs(True, desc)
-
+        self.final_ann_tbs = copy.deepcopy(self.ann_tbs) 
         self.answer_classification()
         self.train_loader.load()
         self.dev_loader.load()
@@ -449,7 +449,7 @@ class WikiQuestionGenerator(object):
             example = self.dev_loader.examples[i]
             dev_data.append(self.ann_egs[example])
 
-        self.load_ann_data(os.path.join(self.data_folder, "pristine-unseen-tables.annotated"))
+        self.load_ann_data(os.path.join(self.data_folder, "pristine-seen-tables.annotated"))
         self.load_ann_tbs()
         self.answer_classification()
         self.test_loader.load()

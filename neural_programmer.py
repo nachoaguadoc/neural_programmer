@@ -18,6 +18,7 @@ This file calls functions to load & pre-process data, construct the TF graph
 and performs training or evaluation as specified by the flag evaluator_job
 Author: aneelakantan (Arvind Neelakantan)
 """
+import json
 import time
 from random import Random
 import numpy as np
@@ -111,7 +112,7 @@ class Utility:
 
 def main(args):
     utility = Utility()
-    train_name = "empty.examples"
+    train_name = "empty.examples" 
     dev_name = "random-split-1-train.examples"
     test_name = "pristine-seen-tables.examples"
 
@@ -143,9 +144,10 @@ def main(args):
 
     table_file_name = FLAGS.data_dir + "preprocessed_data/annotated_tables.pkl"
     if not os.path.isfile(table_file_name):
-        tables = dat.ann_tbs
+        tables = dat.final_ann_tbs
         with open(table_file_name, 'wb') as f:
             pickle.dump(tables, f)
+        print("Saved annotated tables")
     #construct TF graph and train or evaluate
     master(train_data, dev_data, utility, dat)
 
@@ -208,7 +210,7 @@ def master(train_data, dev_data, utility, dat):
                 model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
                 print("Evaluating model " + model_file + " " + str(model_step))
-                accuracy, debugging = test(sess, dev_data, utility, batch_size, graph, model_step)
+                accuracy, debugging = test(sess, train_data, utility, batch_size, graph, model_step)
                 testing_accuracy.append(accuracy)
 
             text_file = open(model_dir + "testing_accuracy.txt", "w")
@@ -326,10 +328,11 @@ def test(sess, data, utility, batch_size, graph, i, accuracy=True):
             num_examples += batch_size
         accuracy = gc / num_examples
         print "Accuracy after ", i, " iterations: ", accuracy
-        return accuracy
+        return accuracy, None
     else:
-        num_examples = 0.0
+        num_good_examples = num_bad_examples = 0.0
         correct_data = []
+        wrong_data = []
         model_dir = utility.FLAGS.output_dir + "/model_" + utility.FLAGS.job_id + "/"
         for j in range(0, len(data) - batch_size + 1, batch_size):
             correct, steps = sess.run([graph.final_correct, graph.steps], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
@@ -337,14 +340,25 @@ def test(sess, data, utility, batch_size, graph, i, accuracy=True):
                 debugging = process_steps(sess, [data[j]], graph, utility, steps)
                 if debugging == None:
                     continue
-                correct_data.append(debugging)
-                num_examples += batch_size
-                if num_examples%50==0:
-                    print("Correct sentences added:", str(num_examples), "out of", str(j), "examples")
-                    data_file = open(model_dir + "data_augmentation.json", "w")
+                correct_data.append(json.dumps(debugging))
+                num_good_examples += batch_size
+                if num_good_examples%50==0:
+                    print("Correct sentences added:", str(num_good_examples), "out of", str(j), "examples")
+                    data_file = open(model_dir + "data_augmentation_four_steps_correct.json", "w")
                     data_file.write(str(correct_data))
                     data_file.close()
-        return num_examples
+            else:
+                debugging = process_steps(sess, [data[j]], graph, utility, steps)
+                if debugging == None:
+                    continue
+                wrong_data.append(json.dumps(debugging))
+                num_bad_examples += batch_size
+                if num_bad_examples%50==0:
+                    print("Wrong sentences added:", str(num_bad_examples), "out of", str(j), "examples")
+                    data_file = open(model_dir + "data_augmentation_four_steps_wrong.json", "w")
+                    data_file.write(str(wrong_data))
+                    data_file.close()
+        return num_good_examples
 
 # Train the model
 def train(graph, utility, batch_size, train_data, sess, model_dir,
@@ -459,7 +473,8 @@ def get_prediction(sess, data, graph, utility, dat):
     lookup_answer = answers[1][0]
 
     lookup_answers = []
-
+    print(data[0].q_id)
+    print(lookup_answer)
     for col_index in range(len(lookup_answer)):
         if not all(p == 0 for p in lookup_answer[col_index]):
             if col_index < 15:
@@ -477,15 +492,17 @@ def get_prediction(sess, data, graph, utility, dat):
             rows_answer = []
             for row in rows:
                 debugging['cells_answer_neural'].append([row, col_real_index])
-
+                
                 row_answer = ''
                 list_answer = cells[row]
                 if type(list_answer) == float:
                     debugging['answer_neural'].append(list_answer)
                     row_answer = str(list_answer)
+                    print(list_answer)
                 else:
                     row_answer = " ".join([str(i) for i in list_answer])
                     debugging['answer_neural'].append(row_answer)
+                    print(row_answer)
                 rows_answer.append(row_answer)
             debugging['is_lookup_neural'] = True
             lookup_answer = ', '.join(rows_answer)
@@ -496,9 +513,22 @@ def get_prediction(sess, data, graph, utility, dat):
     return (str(scalar_answer), debugging)
 
 def process_steps(sess, data, graph, utility, steps):
+    number_comp = {} 
+    number_comp['greater'] = steps['number_comp']['greater'].tolist()
+    number_comp['lesser'] = steps['number_comp']['lesser'].tolist()
+    number_comp['geq'] = steps['number_comp']['geq'].tolist()
+    number_comp['leq'] = steps['number_comp']['leq'].tolist()
+    col_length = len(data[0].nb_col_idx) + len(data[0].wd_col_idx)
+    word_match = [[] for i in range(col_length)]
+    for i in range(len(data[0].nb_col_idx)):
+        col_idx = i
+        word_match[data[0].nb_col_idx[i]] = np.argwhere(steps['word_match'][0][col_idx]==1.0).flatten().tolist()
+    for i in range(len(data[0].wd_col_idx)):
+        col_idx = i + 15
+        word_match[data[0].wd_col_idx[i]] = np.argwhere(steps['word_match'][0][col_idx]==1.0).flatten().tolist()
     debugging =  {
         'question_id': data[0].q_id,
-        'question': data[0].q,
+        'question': data[0].q_og,
         'table_key': data[0].tb_key,
         'correct': True,
         'threshold': FLAGS.certainty_threshold,
@@ -510,16 +540,16 @@ def process_steps(sess, data, graph, utility, steps):
         'cells_answer_feedback': [],
         'is_lookup_feedback': True,
         'below_threshold': False,
-        'certainty': 0.0
-    }
+        'certainty': 0.0,
+        'number_comp': number_comp,
+        'word_match': word_match
+        }
     
     ops = steps['ops']
     cols = steps['cols']
     rows = steps['rows']
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
-    number_comp = steps['number_comp']
-    word_match = steps['word_match']
     certainty = 0
     #print("-------------- New question --------------")
     #print("Number comp:")
