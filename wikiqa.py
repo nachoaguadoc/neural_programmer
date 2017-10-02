@@ -12,6 +12,8 @@ import os
 import re
 import numpy as np
 import tensorflow as tf
+import cPickle
+
 
 class WikiExample(object):
     """
@@ -21,6 +23,7 @@ class WikiExample(object):
     tb_key:            table key
     lookup_mat:        lookup matrix
     sim_tokens:        list of tokens that will be used for similarity search
+    sim_tokens_emb:    embedding of sim tokens
     is_bad_eg:         is bad example
     is_wd_lookup:      is word lookup
     is_ambi_wd_lookup: is ambiguous word lookup
@@ -35,6 +38,7 @@ class WikiExample(object):
         self.a = a
         self.tb_key = tb_key
         self.sim_tokens = sim_tokens
+        self.sim_tokens_emb = sim_tokens_emb
         self.lookup_mat = []
         self.is_bad_eg = False
         self.is_wd_lookup = False
@@ -107,6 +111,11 @@ class WikiQuestionGenerator(object):
         self.train_loader = WikiQuestionLoader(train_name, root_folder)
         self.dev_loader = WikiQuestionLoader(dev_name, root_folder)
         self.test_loader = WikiQuestionLoader(test_name, root_folder)
+
+        with open('glove/emb_lookup.pkl', 'r') as f:
+            self.emb_dict = cPickle.load(f)
+            print 'Finish loading the glove embedding...'
+
         self.bad_egs = 0
         self.root_folder = root_folder
         self.data_folder = os.path.join(self.root_folder, 'annotated/data')
@@ -163,13 +172,23 @@ class WikiQuestionGenerator(object):
                 line = line.strip()
                 q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon = line.split('\t')
                 q = self.prepro_sentence(tokens, ner_tags, ner_values)
+
                 sim_tokens = []
-                pos_tags = pos_string.split('|')
-                print(pos_tags)
-                for i in range(len(pos_tags)):
-                    tag = pos_tags[i]
-                    if tag in ["NN", "NNS", "NNP", "JJ"]:
-                        sim_tokens.append(tokens[i])
+                sim_tokens_emb = {}
+
+                for _index, _item in enumerate(pos_tags.split('|')):
+                    if _item in ['NN', 'NNS', 'NNP', 'JJ']:
+                        try:
+                            sim_tokens.append(q[_index])
+                        except IndexError:
+                            pass
+                # assert len(sim_tokens) > 0  #possible that one word not in the five classes?
+                for sim_word in sim_tokens:
+                    try:
+                        sim_tokens_emb[sim_word] = self.emb_dict[sim_word]
+                    except:
+                        print 'The similar word doesnt have a embedding in glove or no similar words. Skipped.'
+
 
                 tar_canon = tar_canon.split('|')
                 self.ann_egs[q_id] = WikiExample(q_id, q, tar_canon, context, utt, sim_tokens)

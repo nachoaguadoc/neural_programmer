@@ -13,8 +13,54 @@ import copy
 import numbers
 import numpy as np
 import wikiqa
+import cPickle
+
 
 seen_tables = {}
+
+def no_number(input_entry):
+    return not any(char.isdigit() for char in input_entry)
+
+
+def np_softmax(input_column):
+    ex = np.exp(input_column - np.max(input_column))
+    return ex / ex.sum()
+
+
+def sim_match(e, emb_dict, question, table, number):
+    answer = np.zeros(np.asarray(table).shape).tolist()
+    match = {}
+    for _idx, _ in enumerate(table):
+        for idx_, _ in enumerate(table[_idx]):
+            for word in question:
+                if number:
+                    if word == table[_idx][idx_]:
+                        answer[_idx][idx_] = 1.
+                        match[_idx] = 1.
+                else:
+                    # print table[_idx][idx_]
+                    pass
+    if not number and len(e.sim_tokens) > 0:
+        for q_wd in e.sim_tokens:
+            try:
+                q_wd_emb = np.asarray(e.sim_tokens_emb[q_wd])
+            except KeyError:
+                # print 'The word in question doesnt has embedding from Glove, Skipped.'
+                continue
+            for _idx, _ in enumerate(table):
+                for idx_, _ in enumerate(table[_idx]):
+                    for cell_word in table[_idx][idx_]:
+                        if cell_word != 'UNK' and isinstance(cell_word, basestring) and no_number(cell_word):
+                            try:
+                                cell_word_emb = emb_dict[cell_word]
+                            except KeyError:
+                                cell_word_emb = np.zeros(len(q_wd_emb))
+                            answer[_idx][idx_] += np.dot(cell_word_emb, q_wd_emb)
+    for idx, column in enumerate(answer):
+        answer[idx][:] = np_softmax(column)
+    return answer, match
+
+
 def partial_match(question, table, number):
     answer = []
     match = {}
@@ -168,6 +214,10 @@ def check_processed_cols(col, utility):
 
 
 def complete_wiki_processing(data, utility, key='train'):
+    with open('./glove/emb_lookup.pkl', 'r') as f:
+        emb_dict = cPickle.load(f)
+        print 'Finish loading the glove embedding...'
+
     train = True if key=='train' else False
     processed_data = []
     num_bad_examples = 0
@@ -180,12 +230,23 @@ def complete_wiki_processing(data, utility, key='train'):
             #entry match
             example.p_nb_cols = example.p_nb_cols[:]
             example.p_wd_cols = example.p_wd_cols[:]
+
             example.word_exact_match, word_match, matched_indices = exact_match(example.string_question, example.original_wc, number=False)
             example.number_exact_match, number_match, _ = exact_match(example.string_question, example.original_nc, number=True)
+            
             if (not (pick_one(example.word_exact_match)) and not (pick_one(example.number_exact_match))):
                 assert len(word_match) == 0
                 assert len(number_match) == 0
                 example.word_exact_match, word_match = partial_match(example.string_question, example.original_wc, number=False)
+
+            if not pick_one(e.word_exact_match) and not pick_one(e.number_exact_match):
+                assert len(word_match) == 0
+                assert len(number_match) == 0
+                example.word_exact_match, word_match = sim_match(example, emb_dict,
+                                                              example.string_question,
+                                                              example.original_wc,
+                                                              number=False)                
+            
             #group by max
             example.word_group_by_max = group_by_max(example.original_wc, False)
             example.number_group_by_max = group_by_max(example.original_nc, True)
