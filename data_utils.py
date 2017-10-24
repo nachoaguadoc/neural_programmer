@@ -256,104 +256,38 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
     else:
         feed_dict[gr.batch_question] = [feed_examples[j].q for j in range(batch_size)]
 
-    print("1")
-    np.array([feed_examples[j].question_attention_mask for j in range(batch_size)])
     feed_dict[gr.batch_question_attention_mask] = [feed_examples[j].question_attention_mask for j in range(batch_size)]
-    print("2")
-    np.array( [feed_examples[j].answer for j in range(batch_size)])
     feed_dict[gr.batch_answer] = [feed_examples[j].answer for j in range(batch_size)]
-    print("3")
-    np.array([feed_examples[j].nb_cols for j in range(batch_size)])
     feed_dict[gr.batch_number_column] = [feed_examples[j].nb_cols for j in range(batch_size)]
-    print("4")
-    np.array([feed_examples[j].p_nb_cols for j in range(batch_size)])
     feed_dict[gr.batch_processed_number_column] = [feed_examples[j].p_nb_cols for j in range(batch_size)]
-    print("5")
-    np.array([feed_examples[j].sorted_number_index for j in range(batch_size)])
     feed_dict[gr.batch_processed_sorted_index_number_column] = [feed_examples[j].sorted_number_index for j in range(batch_size)]
-    print("6")
-    np.array([feed_examples[j].sorted_word_index for j in range(batch_size)])
     feed_dict[gr.batch_processed_sorted_index_word_column] = [feed_examples[j].sorted_word_index for j in range(batch_size)]
-    print("7")
-    np.array(np.array([feed_examples[j].question_number for j in range(batch_size)]).reshape((batch_size, 1)))
     feed_dict[gr.batch_question_number] = np.array([feed_examples[j].question_number for j in range(batch_size)]).reshape((batch_size, 1))
-    print("8")
-    np.array(np.array([feed_examples[j].question_number_1 for j in range(batch_size)]).reshape((batch_size, 1)))
     feed_dict[gr.batch_question_number_one] = np.array([feed_examples[j].question_number_1 for j in range(batch_size)]).reshape((batch_size, 1))
-    print("9")
-    np.array([feed_examples[j].question_number_mask for j in range(batch_size)])
     feed_dict[gr.batch_question_number_mask] = [feed_examples[j].question_number_mask for j in range(batch_size)]
-    print("10")
-    np.array(np.array([feed_examples[j].question_number_one_mask for j in range(batch_size)]).reshape((batch_size, 1)))
     feed_dict[gr.batch_question_number_one_mask] = np.array([feed_examples[j].question_number_one_mask for j in range(batch_size)]).reshape((batch_size, 1))
-    print("11")
-    np.array([feed_examples[j].print_answer for j in range(batch_size)])
     feed_dict[gr.batch_print_answer] = [feed_examples[j].print_answer for j in range(batch_size)]
-    print("12")
-    np.array([feed_examples[j].exact_match for j in range(batch_size)])
     feed_dict[gr.batch_exact_match] = [feed_examples[j].exact_match for j in range(batch_size)]
-    print("13")
-    np.array([feed_examples[j].group_by_max for j in range(batch_size)])
     feed_dict[gr.batch_group_by_max] = [feed_examples[j].group_by_max for j in range(batch_size)]
-    print("14")
-    np.array([feed_examples[j].exact_column_match for j in range(batch_size)])
     feed_dict[gr.batch_column_exact_match] = [feed_examples[j].exact_column_match for j in range(batch_size)]
-    print("15")
-    np.array([feed_examples[j].exact_column_description_match for j in range(batch_size)])
     feed_dict[gr.batch_column_description_match] = [feed_examples[j].exact_column_description_match for j in range(batch_size)]
-    print("16")
-    np.array([feed_examples[j].ordinal_question for j in range(batch_size)])
     feed_dict[gr.batch_ordinal_question] = [feed_examples[j].ordinal_question for j in range(batch_size)]
-    print("17")
-    np.array([feed_examples[j].ordinal_question_one for j in range(batch_size)])
     feed_dict[gr.batch_ordinal_question_one] = [feed_examples[j].ordinal_question_one for j in range(batch_size)]
-    print("18")
-    np.array([feed_examples[j].number_column_mask for j in range(batch_size)])
     feed_dict[gr.batch_number_column_mask] = [feed_examples[j].number_column_mask for j in range(batch_size)]
-    print("19")
-    np.array([feed_examples[j].number_column_ids for j in range(batch_size)])
     feed_dict[gr.batch_number_column_names] = [feed_examples[j].number_column_ids for j in range(batch_size)]
-    print("20")
-    np.array([feed_examples[j].number_column_name_mask for j in range(batch_size)])
     feed_dict[gr.batch_number_column_name_mask] = [feed_examples[j].number_column_name_mask for j in range(batch_size)]
-    print("21")
-    np.array([feed_examples[j].number_column_name_lengths for j in range(batch_size)])
     feed_dict[gr.batch_number_column_name_lengths] = [feed_examples[j].number_column_name_lengths for j in range(batch_size)]
-    print("22")
-    np.array([feed_examples[j].number_column_description_ids for j in range(batch_size)])
     feed_dict[gr.batch_number_column_descriptions] = [feed_examples[j].number_column_description_ids for j in range(batch_size)]
-    print("23")
-    np.array([feed_examples[j].number_column_description_mask for j in range(batch_size)])
     feed_dict[gr.batch_number_column_description_mask] = [feed_examples[j].number_column_description_mask for j in range(batch_size)]
-    print("24")
-    np.array([feed_examples[j].number_column_description_lengths for j in range(batch_size)])
     feed_dict[gr.batch_number_column_description_lengths] = [feed_examples[j].number_column_description_lengths for j in range(batch_size)]
-    print("25")
-    np.array([feed_examples[j].p_wd_cols for j in range(batch_size)])
     feed_dict[gr.batch_processed_word_column] = [feed_examples[j].p_wd_cols for j in range(batch_size)]
-    print("26")
-    np.array([feed_examples[j].word_column_mask for j in range(batch_size)])
     feed_dict[gr.batch_word_column_mask] = [feed_examples[j].word_column_mask for j in range(batch_size)]
-    print("27")
-    np.array([feed_examples[j].word_column_ids for j in range(batch_size)])
     feed_dict[gr.batch_word_column_names] = [feed_examples[j].word_column_ids for j in range(batch_size)]
-    print("28")
-    np.array([feed_examples[j].word_column_name_mask for j in range(batch_size)])
     feed_dict[gr.batch_word_column_name_mask] = [feed_examples[j].word_column_name_mask for j in range(batch_size)]
-    print("29")
-    np.array([feed_examples[j].word_column_name_lengths for j in range(batch_size)])
     feed_dict[gr.batch_word_column_name_lengths] = [feed_examples[j].word_column_name_lengths for j in range(batch_size)]
-    print("30")
-    np.array([feed_examples[j].word_column_description_ids for j in range(batch_size)])
     feed_dict[gr.batch_word_column_descriptions] = [feed_examples[j].word_column_description_ids for j in range(batch_size)]
-    print("31")
-    np.array([feed_examples[j].word_column_description_lengths for j in range(batch_size)])
     feed_dict[gr.batch_word_column_description_lengths] = [feed_examples[j].word_column_description_lengths for j in range(batch_size)]
-    print("32")
-    np.array([feed_examples[j].word_column_description_mask for j in range(batch_size)])
     feed_dict[gr.batch_word_column_description_mask] = [feed_examples[j].word_column_description_mask for j in range(batch_size)]
-    print("33")
-    np.array([feed_examples[j].word_column_entry_mask for j in range(batch_size)])
     feed_dict[gr.batch_word_column_entry_mask] = [feed_examples[j].word_column_entry_mask for j in range(batch_size)]
 
     return feed_dict
