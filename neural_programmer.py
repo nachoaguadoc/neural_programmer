@@ -112,9 +112,11 @@ class Utility:
 
 def main(args):
     utility = Utility()
-    train_name = "empty.examples" 
-    dev_name = "random-split-1-train.examples"
-    test_name = "pristine-seen-tables.examples"
+    #train_name = "random-split-1-train-syns.examples"
+    train_name = "random-split-1-train.examples"    
+    #dev_name = "random-split-1-dev-syns.examples"
+    dev_name = "random-split-1-dev.examples"
+    test_name = "pristine-unseen-tables.examples"
 
     #Load the training, validation and test data
     dat = wikiqa.WikiQuestionGenerator(train_name, dev_name, test_name, FLAGS.data_dir)
@@ -135,7 +137,7 @@ def main(args):
 
     train_data = masking.complete_wiki_processing(train_data, utility, 'train')
     dev_data = masking.complete_wiki_processing(dev_data, utility, 'error-test')
-    #test_data = data_utils.complete_wiki_processing(test_data, utility, False)
+    test_data = masking.complete_wiki_processing(test_data, utility, 'error-test')
 
     print("Preprocessing finished:")
     print("     Number of train examples " + str(len(train_data)))
@@ -149,7 +151,7 @@ def main(args):
             pickle.dump(tables, f)
         print("Saved annotated tables")
     #construct TF graph and train or evaluate
-    master(train_data, dev_data, utility, dat)
+    master(train_data, test_data, utility, dat)
 
 
 def master(train_data, dev_data, utility, dat):
@@ -210,7 +212,7 @@ def master(train_data, dev_data, utility, dat):
                 model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
                 print("Evaluating model " + model_file + " " + str(model_step))
-                accuracy, debugging = test(sess, train_data, utility, batch_size, graph, model_step)
+                accuracy, debugging = test(sess, dev_data, utility, batch_size, graph, model_step)
                 testing_accuracy.append(accuracy)
 
             text_file = open(model_dir + "testing_accuracy.txt", "w")
@@ -222,7 +224,7 @@ def master(train_data, dev_data, utility, dat):
             model_step = int(model_file.split("_")[len(model_file.split("_")) - 1])
 
             print("Evaluating model " + model_file + " " + str(model_step))
-            n_examples = test(sess, dev_data, utility, batch_size, graph, model_step, False)
+            n_examples = test(sess, train_data, utility, batch_size, graph, model_step, False)
             print("Total number of examples", str(n_examples))
 
         elif key == 'train':
@@ -323,7 +325,19 @@ def test(sess, data, utility, batch_size, graph, i, accuracy=True):
         gc = 0.0
 
         for j in range(0, len(data) - batch_size + 1, batch_size):
-            [ct] = sess.run([graph.final_correct], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
+            #print("*************")
+            ct, answers, steps = sess.run([graph.final_correct, graph.answers, graph.steps], feed_dict=data_utils.generate_feed_dict(data, j, batch_size, graph))
+            #print("Answers:")
+            #print(answers)
+            #print("Steps:")
+            #print(steps)
+            #print("Lookup:")
+            #lookup = answers[1][0]
+            #for i in range(len(lookup)):
+            #    for h in range(len(lookup[i])):
+            #        if lookup[i][h] != 0:
+            #            print("+++++++++++++++++")
+            #            print(lookup[i][h])
             gc += ct * batch_size
             num_examples += batch_size
         accuracy = gc / num_examples
@@ -344,7 +358,7 @@ def test(sess, data, utility, batch_size, graph, i, accuracy=True):
                 num_good_examples += batch_size
                 if num_good_examples%50==0:
                     print("Correct sentences added:", str(num_good_examples), "out of", str(j), "examples")
-                    data_file = open(model_dir + "data_augmentation_four_steps_correct.json", "w")
+                    data_file = open(model_dir + "data_augmentation_four_steps_noprev_correct.json", "w")
                     data_file.write(str(correct_data))
                     data_file.close()
             else:
@@ -355,7 +369,7 @@ def test(sess, data, utility, batch_size, graph, i, accuracy=True):
                 num_bad_examples += batch_size
                 if num_bad_examples%50==0:
                     print("Wrong sentences added:", str(num_bad_examples), "out of", str(j), "examples")
-                    data_file = open(model_dir + "data_augmentation_four_steps_wrong.json", "w")
+                    data_file = open(model_dir + "data_augmentation_four_steps_noprev_wrong.json", "w")
                     data_file.write(str(wrong_data))
                     data_file.close()
         return num_good_examples
@@ -376,7 +390,7 @@ def train(graph, utility, batch_size, train_data, sess, model_dir,
         if curr + batch_size >= len(train_data):
             curr = 0
             utility.random.shuffle(train_data)
-        step, cost_value = sess.run([graph.step, graph.total_cost], feed_dict=data_utils.generate_feed_dict(train_data, curr, batch_size, graph, train=True, utility=utility))
+        step, cost_value, rows = sess.run([graph.step, graph.total_cost, graph.rows], feed_dict=data_utils.generate_feed_dict(train_data, curr, batch_size, graph, train=True, utility=utility))
         curr = curr + batch_size
         train_set_loss += cost_value
         if (i > 0 and i % FLAGS.eval_cycle == 0):
@@ -451,11 +465,15 @@ def demo(graph, utility, sess, model_dir, dat, mode):
                 print("Question: " + tokens)
                 print("Table: " + table_key)
                 data = [dat.load_example(question_id, tokens, table_key)]
+                d = data[0]
+                for key, val in d.__dict__.iteritems():
+                    print(key, val)
                 data_utils.construct_vocab(data, utility, True)
                 final_data = masking.complete_wiki_processing(data, utility, 'demo')
-
+                print("final_data", final_data)
                 final_answer, debugging = get_prediction(sess, final_data, graph, utility, dat)
-
+                print("final_answer", final_answer)
+                print("debugging_debugging")
                 certainty = debugging['certainty']
 
                 if (certainty < FLAGS.certainty_threshold):
@@ -467,6 +485,10 @@ def get_prediction(sess, data, graph, utility, dat):
 
     table_key = data[0].tb_key
     answers, steps = sess.run([graph.answers, graph.steps], feed_dict=data_utils.generate_feed_dict(data, 0, 1, graph))
+    print("****************")
+    print(answers)
+    print(steps)
+    print("****************")
     debugging = process_steps(sess, data, graph, utility, steps)
 
     scalar_answer = answers[0][0]
@@ -551,11 +573,11 @@ def process_steps(sess, data, graph, utility, steps):
     soft_ops = steps['soft_ops']
     soft_cols = steps['soft_cols']
     certainty = 0
-    #print("-------------- New question --------------")
-    #print("Number comp:")
-    #print(number_comp)
-    #print("Word match:")
-    #print(np.where(word_match==1.0))
+    print("-------------- New question --------------")
+    print("Number comp:")
+    print(number_comp)
+    print("Word match:")
+    print(np.where(word_match==1.0))
     # Debugging step by step
     for i in range(len(ops)):
         step =  {
@@ -600,7 +622,7 @@ def process_steps(sess, data, graph, utility, steps):
         certainty_step = step['operation_softmax'] * step['column_softmax']
         certainty += certainty_step
 
-        #print("STEP " + str(i) + " : Performed operation <" + step['operation_name'] + "> (" + str(step['operation_softmax']) + ") over the column <" + step['column_name'] + "> (" + str(step['column_softmax']) + ")")
+        print("STEP " + str(i) + " : Performed operation <" + step['operation_name'] + "> (" + str(step['operation_softmax']) + ") over the column <" + step['column_name'] + "> (" + str(step['column_softmax']) + ")")
 
     certainty = (certainty / len(ops)) * 100
     debugging['certainty'] = certainty

@@ -98,6 +98,7 @@ class WikiQuestionLoader(object):
 
 
 bad_nb = -999.0
+bad_count = 0
 
 class WikiQuestionGenerator(object):
     def __init__(self, train_name, dev_name, test_name, root_folder):
@@ -119,13 +120,20 @@ class WikiQuestionGenerator(object):
         self.ann_wd_reject['-lrb-'] = 1
         self.ann_wd_reject['-rrb-'] = 1
         self.ann_wd_reject['UNK'] = 1
-
     def prepro_sentence(self, tokens, ner_tags, ner_values):
+        global bad_count
         sentence = []
         tokens = tokens.split('|')
         ner_tags = ner_tags.split('|')
         ner_values = ner_values.split('|')
         ner_tags, ner_values = remove_conse(ner_tags, ner_values)
+        if len(tokens) != len(ner_values):
+            for t in tokens:
+                if t.isdigit():
+                    sentence.append(float(t))
+                else:
+                    sentence.append(t)
+            return sentence
         for i in xrange(len(tokens)):
             word = tokens[i]
             if ner_values[i]!='' and (ner_values[i] == 'NUMBER' or ner_values[i] == 'MONEY' or
@@ -166,7 +174,6 @@ class WikiQuestionGenerator(object):
                 q = self.prepro_sentence(tokens, ner_tags, ner_values)
                 sim_tokens = []
                 pos_tags = pos_string.split('|')
-                print(pos_tags)
                 for i in range(len(pos_tags)):
                     tag = pos_tags[i]
                     if tag in ["NN", "NNS", "NNP", "JJ"]:
@@ -204,8 +211,9 @@ class WikiQuestionGenerator(object):
         ner_values = ner_values[:-1]
         new_tokens = new_tokens[:-1]
         tar_canon = "UNK"
+        q = self.prepro_sentence(new_tokens, ner_tags, ner_values)
         self.custom_egs[q_id] = WikiExample(q_id, q, tar_canon, context, input_og, [])
-        return q
+        return q 
 
 
     def load_ann_tbs(self, custom=False, desc=False):
@@ -264,9 +272,9 @@ class WikiQuestionGenerator(object):
                         print("Processing column descriptions:")
                         print("       Old entry: " + str(entry))
                         print("       New entry: " + str(new_entry))
-                        col_desc.append(new_entry)
+                        col_desc.append([str(e).lower() for e in new_entry])
                     if row == '-1':
-                        col_names.append(entry)
+                        col_names.append([str(e).lower() for e in entry])
                     else:
                         o_cols[int(col)][int(row)] = entry
                         if len(entry) == 1 and is_number(entry[0]):
@@ -321,6 +329,7 @@ class WikiQuestionGenerator(object):
         tot = 0
         got = 0
         ice = {}
+#        with tf.gfile.GFile(self.root_folder + "arvind-with-norms-2-syns.tsv", mode="r") as f:
         with tf.gfile.GFile(self.root_folder + "arvind-with-norms-2.tsv", mode="r") as f:
             lines = f.readlines()
             for line in lines:
@@ -432,7 +441,7 @@ class WikiQuestionGenerator(object):
         return eg
 
     def load_example(self, q_id, tokens, context):
-        q = self.load_custom_data(q_id, tokens, context)
+        self.load_custom_data(q_id, tokens, context)
         example = self.custom_answer_classification(q_id)
         return example
 
@@ -440,6 +449,7 @@ class WikiQuestionGenerator(object):
         train_data = []
         dev_data = []
         test_data = []
+#        self.load_ann_data(os.path.join(self.data_folder, "training-syns.annotated"))
         self.load_ann_data(os.path.join(self.data_folder, "training.annotated"))
         self.load_ann_tbs(False, False)
         if (mode=='demo-console' or mode=='demo-visual' or mode=='custom-test'):
@@ -458,7 +468,7 @@ class WikiQuestionGenerator(object):
             example = self.dev_loader.examples[i]
             dev_data.append(self.ann_egs[example])
 
-        self.load_ann_data(os.path.join(self.data_folder, "pristine-seen-tables.annotated"))
+        self.load_ann_data(os.path.join(self.data_folder, "pristine-unseen-tables.annotated"))
         self.load_ann_tbs()
         self.answer_classification()
         self.test_loader.load()
