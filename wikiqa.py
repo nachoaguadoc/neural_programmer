@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import division
 from sys import exit
 import copy
@@ -12,7 +11,7 @@ import os
 import re
 import numpy as np
 import tensorflow as tf
-
+import warnings
 class WikiExample(object):
     """
     q_id:              question id
@@ -120,21 +119,19 @@ class WikiQuestionGenerator(object):
         self.ann_wd_reject['-lrb-'] = 1
         self.ann_wd_reject['-rrb-'] = 1
         self.ann_wd_reject['UNK'] = 1
-
+        self.TOKENIZER_REGEX = re.compile(r'(?:(?:\s+|^)[^\w\d\$\&]*\s*|\s*[^\w\d\$\&]*(?:\s+|$)[^\w\d\$\&]*)')
     def prepro_sentence(self, tokens, ner_tags, ner_values):
         sentence = []
         tokens = tokens.split('|')
         ner_tags = ner_tags.split('|')
         ner_values = ner_values.split('|')
         ner_tags, ner_values = remove_conse(ner_tags, ner_values)
-        if len(tokens) != len(ner_values):
-            for t in tokens:
-                t = t.replace(">", "").replace("<", "").replace("=", "").replace("%", "").replace("~", "").replace("$", "").replace("£", "").replace("€", "")
-                if t.isdigit():
-                    word = float(t)
-                else:
-                    word = t
-
+        for t in tokens:
+            t = t.replace(">", "").replace("<", "").replace("=", "").replace("%", "").replace("~", "").replace("$", "").replace("£", "").replace("€", "")
+            if t.isdigit():
+                word = float(t)
+            else:
+                word = t
             if not self.ann_wd_reject.has_key(word):
                 if is_number(word) or is_date(word) or is_money(word):
                     sentence.append(word)
@@ -148,10 +145,9 @@ class WikiQuestionGenerator(object):
         return sentence
 
 
-    TOKENIZER_REGEX = re.compile(r'(?:(?:\s+|^)[^\w\d\$\&]*\s*|\s*[^\w\d\$\&]*(?:\s+|$)[^\w\d\$\&]*)')
     def tokenize(self, text):
         warnings.simplefilter("ignore")
-        return re.split(TOKENIZER_REGEX, text)
+        return re.split(self.TOKENIZER_REGEX, text)
     def load_ann_data(self, in_file):
         self.ann_egs = {}
         self.ann_tbs = {}
@@ -160,9 +156,19 @@ class WikiQuestionGenerator(object):
         for line in f:
             if counter > 0:
                 line = line.strip()
-                q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de, tar_val_de = line.split('\t')
+                line_len = len(line.split('\t'))
+                if line_len == 10:
+                    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon = line.split('\t')
+                    utt_de = utt
+                    tar_val_de = tar_canon
+                elif line_len == 11:
+                    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de = line.split('\t')
+                    tar_val_de = tar_canon
+                else:
+                    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de, tar_val_de = line.split('\t')
                 tokens_de = '|'.join(self.tokenize(utt_de))
                 q_de = self.prepro_sentence(tokens_de, ner_tags, ner_values)
+                print(q_de)
                 sim_tokens = []
                 pos_tags = pos_string.split('|')
                 for i in range(len(pos_tags)):
@@ -170,12 +176,16 @@ class WikiQuestionGenerator(object):
                     if tag in ["NN", "NNS", "NNP", "JJ"]:
                         sim_tokens.append(tokens[i])
                 tar_canon_de = []
-                for t in tar_val_de:
-                    if is_number(tar_val_de):
-                        tar_canon_de.append(float(tar_val_de))
-                    else:
-                        tar_canon_de.append(tar_val_de) 
-                tar_canon_de = tar_canon_de.split('|')
+                target_de = tar_val_de.split("|")
+                for t in target_de:
+                    target_de_word = t.split(" ")
+                    tar_canon_word = []
+                    for s in target_de_word:
+                        if is_number(s):
+                            tar_canon_word.append(str(float(s)))
+                        else:
+                            tar_canon_word.append(s)
+                    tar_canon_de.append(' '.join(tar_canon_word))
                 self.ann_egs[q_id] = WikiExample(q_id, q_de, tar_canon_de, context, utt_de, sim_tokens)
                 self.ann_tbs[context] = []
             counter += 1
@@ -218,7 +228,7 @@ class WikiQuestionGenerator(object):
         """
         tables = self.custom_tbs if custom else self.ann_tbs
         for table in tables.keys():
-            ann_tb = table.replace('csv', 'annotated.translated')
+            ann_tb = table.replace('csv', 'annotated')+ '.translated'
             o_cols = []
             p_cols = []
             # print os.path.join(self.root_folder+'data', ann_tb)
@@ -227,9 +237,8 @@ class WikiQuestionGenerator(object):
             for line in f:
                 if counter > 0:
                     line = line.strip()
-                    line = line + '\t' * (13 - len(line.split('\t')))
-                    row, col, _, _, tokens, _, _, \
-                    ner_tags, ner_values, number, _, _, _, content_de = line.split('\t')
+                    line = line + '\t' * (14 - len(line.split('\t')))
+                    row, col, _, _, tokens, _, _,  ner_tags, ner_values, number, _, _, _, content_de = line.split('\t')
                 counter += 1
             f.close()
             max_row = int(row)
@@ -247,15 +256,15 @@ class WikiQuestionGenerator(object):
             for line in f:
                 if counter > 0:
                     line = line.strip()
-                    line = line + '\t' * (13 - len(line.split('\t')))
+                    line = line + '\t' * (14 - len(line.split('\t')))
                     row, col, _, content, tokens, _, _,\
                     ner_tags, ner_values, number, _, _, _, content_de = line.split('\t')
-                    if custom:
+                    if content_de != '':
                         tokens = '|'.join(self.tokenize(content_de))
-                        ner_tags = 'O|' * len(tokens)
-                        ner_tags = ner_tags[:-1]
-                        ner_values = '|' * (len(tokens)-1)
-                    else:
+                    ner_tags = 'O|' * len(tokens)
+                    ner_tags = ner_tags[:-1]
+                    ner_values = '|' * (len(tokens)-1)
+                    if not custom:
                         col_desc.append([])
                     entry = self.prepro_sentence(tokens, ner_tags, ner_values)
                     if row=='-2':
@@ -321,7 +330,7 @@ class WikiQuestionGenerator(object):
         got = 0
         ice = {}
 #        with tf.gfile.GFile(self.root_folder + "arvind-with-norms-2-syns.tsv", mode="r") as f:
-        with tf.gfile.GFile(self.root_folder + "arvind-with-norms-2.tsv.translated", mode="r") as f:
+        with tf.gfile.GFile(self.root_folder + "arvind-with-norms-2.tsv", mode="r") as f:
             lines = f.readlines()
             for line in lines:
                 line = line.strip()
@@ -331,7 +340,7 @@ class WikiQuestionGenerator(object):
                     line = line + "\t" * (5 - len(line.split("\t")))
                     if (not (is_number(line.split("\t")[2]))):
                         ice_bad_questions += 1
-                (example_id, ans_index, ans_raw, process_answer, matched_cells, ans_raw_de) = line.split("\t")
+                (example_id, ans_index, ans_raw, process_answer, matched_cells) = line.split("\t")
                 if (ice.has_key(example_id)):
                     ice[example_id].append(line.split("\t"))
                 else:
@@ -345,7 +354,7 @@ class WikiQuestionGenerator(object):
             n_rows = len(table_info.o_cols[0])
             example.lookup_mat = np.zeros((n_rows, n_cols))
             exact_matches = {}
-            for (example_id, ans_index, ans_raw, process_answer, matched_cells, ans_raw_de) in ice[q_id]:
+            for (example_id, ans_index, ans_raw, process_answer, matched_cells) in ice[q_id]:
                 for match_cell in matched_cells.split("|"):
                     if (len(match_cell.split(",")) == 2):
                         (row, col) = match_cell.split(",")
@@ -355,7 +364,7 @@ class WikiQuestionGenerator(object):
                             exact_matches[ans_index] = 1
             answer_is_in_table = len(exact_matches) == len(example.a)
             if (answer_is_in_table):
-                for (example_id, ans_index, ans_raw, process_answer, matched_cells, ans_raw_de) in ice[q_id]:
+                for (example_id, ans_index, ans_raw, process_answer, matched_cells) in ice[q_id]:
                     for match_cell in matched_cells.split("|"):
                         if (len(match_cell.split(",")) == 2):
                             (row, col) = match_cell.split(",")

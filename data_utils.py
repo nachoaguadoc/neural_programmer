@@ -149,7 +149,8 @@ def construct_vocab(data, utility, add_word=False):
                                 utility.reverse_word_ids[utility.word_ids[word]] = word
                             else:
                                 utility.word_count[word] += 1
-
+    print(len(utility.words))
+    return len(utility.words)
 
 def word_lookup(word, utility):
   if utility.word_ids.has_key(word):
