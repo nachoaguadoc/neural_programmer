@@ -149,7 +149,7 @@ class WikiQuestionGenerator(object):
 
 
     TOKENIZER_REGEX = re.compile(r'(?:(?:\s+|^)[^\w\d\$\&]*\s*|\s*[^\w\d\$\&]*(?:\s+|$)[^\w\d\$\&]*)')
-    def tokenize(text):
+    def tokenize(self, text):
         warnings.simplefilter("ignore")
         return re.split(TOKENIZER_REGEX, text)
     def load_ann_data(self, in_file):
@@ -161,7 +161,7 @@ class WikiQuestionGenerator(object):
             if counter > 0:
                 line = line.strip()
                 q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de, tar_val_de = line.split('\t')
-                tokens_de = '|'.join(tokenize(utt_de))
+                tokens_de = '|'.join(self.tokenize(utt_de))
                 q_de = self.prepro_sentence(tokens_de, ner_tags, ner_values)
                 sim_tokens = []
                 pos_tags = pos_string.split('|')
@@ -251,7 +251,7 @@ class WikiQuestionGenerator(object):
                     row, col, _, content, tokens, _, _,\
                     ner_tags, ner_values, number, _, _, _, content_de = line.split('\t')
                     if custom:
-                        tokens = '|'.join(tokenize(content_de))
+                        tokens = '|'.join(self.tokenize(content_de))
                         ner_tags = 'O|' * len(tokens)
                         ner_tags = ner_tags[:-1]
                         ner_values = '|' * (len(tokens)-1)
@@ -441,7 +441,7 @@ class WikiQuestionGenerator(object):
         dev_data = []
         test_data = []
 #        self.load_ann_data(os.path.join(self.data_folder, "training-syns.annotated"))
-        self.load_ann_data(os.path.join(self.data_folder, "training.annotated"))
+        self.load_ann_data(os.path.join(self.data_folder, "training.annotated.translated"))
         self.load_ann_tbs(False, False)
         if (mode=='demo-console' or mode=='demo-visual' or mode=='custom-test'):
              self.load_custom_tbs()
