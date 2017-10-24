@@ -43,7 +43,7 @@ tf.flags.DEFINE_string("job_id", "_baseline", "Name of the model trained")
 tf.flags.DEFINE_string("model", "baseline", "Eval with baseline/column_description")
 tf.flags.DEFINE_string("output_dir", "model/embeddings/", "Path where the trained model will be saved")
 tf.flags.DEFINE_string("model_id", "96500", "ID of the checkpoint to retrieve for testing")
-tf.flags.DEFINE_string("data_dir", "data/", "Path where the data is stored")
+tf.flags.DEFINE_string("data_dir", "data/german/", "Path where the data is stored")
 
 tf.flags.DEFINE_integer("max_elements", 100, "Maximum rows that are considered for processing")
 tf.flags.DEFINE_integer("max_description", 100, "Maximum words that are considered for the description")
@@ -144,12 +144,6 @@ def main(args):
     print("     Number of validation examples " + str(len(dev_data)))
     print("     Number of test examples " + str(len(test_data)))
 
-    table_file_name = FLAGS.data_dir + "preprocessed_data/annotated_tables.pkl"
-    if not os.path.isfile(table_file_name):
-        tables = dat.final_ann_tbs
-        with open(table_file_name, 'wb') as f:
-            pickle.dump(tables, f)
-        print("Saved annotated tables")
     #construct TF graph and train or evaluate
     master(train_data, test_data, utility, dat)
 
