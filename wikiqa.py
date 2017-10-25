@@ -196,8 +196,8 @@ class WikiQuestionGenerator(object):
 
     def load_custom_tbs(self):
         self.custom_tbs = {}
-        self.custom_tbs['csv/custom-csv/uefa.csv'] = []
-        self.custom_tbs['csv/custom-csv/swisscom.csv'] = []
+        self.custom_tbs['csv/custom-csv/swisscom.csv.translated'] = []
+
         print 'Custom tables loaded'
 
     def load_custom_data(self, q_id, input_og, context):
@@ -272,14 +272,10 @@ class WikiQuestionGenerator(object):
                     if row=='-2':
                         new_entry = []
                         if desc:
-                            pos_tags = nltk.pos_tag(entry)
-                            for tag in pos_tags:
-                              if tag[0] not in ['UNK', 'is', 'are']  and tag[1] in ['NN', 'JJ', 'NNS', 'NNP', 'NNPS','RB', 'SYM', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']:
-                                new_entry.append(tag[0])
                         print("Processing column descriptions:")
                         print("       Old entry: " + str(entry))
                         print("       New entry: " + str(new_entry))
-                        col_desc.append([str(e).lower() for e in new_entry])
+                            col_desc.append([str(e).lower() for e in entry])
                     if row == '-1':
                         col_names.append([str(e).lower() for e in entry])
                     else:
