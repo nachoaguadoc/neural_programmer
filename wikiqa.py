@@ -157,13 +157,15 @@ class WikiQuestionGenerator(object):
             if counter > 0:
                 line = line.strip()
                 line_len = len(line.split('\t'))
-                if line_len == 10:
-                    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon = line.split('\t')
-                    utt_de = utt
-                    tar_val_de = tar_canon
-                elif line_len == 11:
-                    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de = line.split('\t')
-                    tar_val_de = tar_canon
+                #if line_len == 10:
+                #    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon = line.split('\t')
+                #    utt_de = utt
+                #    tar_val_de = tar_canon
+                #elif line_len == 11:
+                #    q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de = line.split('\t')
+                #    tar_val_de = tar_canon
+                if line_len < 12:
+                    continue
                 else:
                     q_id, utt, context, tar_val, tokens,_, pos_string, ner_tags, ner_values, tar_canon, utt_de, tar_val_de = line.split('\t')
                 tokens_de = '|'.join(self.tokenize(utt_de))
@@ -462,19 +464,21 @@ class WikiQuestionGenerator(object):
 
         for i in range(self.train_loader.nb_q()):
             example = self.train_loader.examples[i]
-            example = self.ann_egs[example]
-            train_data.append(example)
+            if example in self.ann_egs.keys():
+                example = self.ann_egs[example]
+                train_data.append(example)
         for i in range(self.dev_loader.nb_q()):
             example = self.dev_loader.examples[i]
-            dev_data.append(self.ann_egs[example])
+            if example in self.ann_egs.keys():
+                dev_data.append(self.ann_egs[example])
 
-        self.load_ann_data(os.path.join(self.data_folder, "pristine-unseen-tables.annotated"))
-        self.load_ann_tbs()
-        self.answer_classification()
-        self.test_loader.load()
-        for i in range(self.test_loader.nb_q()):
-            example = self.test_loader.examples[i]
-            test_data.append(self.ann_egs[example])
+        #self.load_ann_data(os.path.join(self.data_folder, "pristine-unseen-tables.annotated"))
+        #self.load_ann_tbs()
+        #self.answer_classification()
+        #self.test_loader.load()
+        #for i in range(self.test_loader.nb_q()):
+        #    example = self.test_loader.examples[i]
+        #    test_data.append(self.ann_egs[example])
 
         return train_data, dev_data, test_data
 if __name__ == '__main__':

@@ -250,8 +250,6 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
     for j in range(batch_size):
         feed_examples.append(data[curr + j])
     if train:
-        print("0")
-        np.array([word_dropout(feed_examples[j].q, utility) for j in range(batch_size)])
         feed_dict[gr.batch_question] = [word_dropout(feed_examples[j].q, utility) for j in range(batch_size)]
     else:
         feed_dict[gr.batch_question] = [feed_examples[j].q for j in range(batch_size)]
@@ -289,5 +287,4 @@ def generate_feed_dict(data, curr, batch_size, gr, train=False, utility=None):
     feed_dict[gr.batch_word_column_description_lengths] = [feed_examples[j].word_column_description_lengths for j in range(batch_size)]
     feed_dict[gr.batch_word_column_description_mask] = [feed_examples[j].word_column_description_mask for j in range(batch_size)]
     feed_dict[gr.batch_word_column_entry_mask] = [feed_examples[j].word_column_entry_mask for j in range(batch_size)]
-
     return feed_dict

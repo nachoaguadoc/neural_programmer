@@ -46,7 +46,7 @@ tf.flags.DEFINE_string("model_id", "96500", "ID of the checkpoint to retrieve fo
 tf.flags.DEFINE_string("data_dir", "data/german/", "Path where the data is stored")
 
 tf.flags.DEFINE_integer("max_elements", 100, "Maximum rows that are considered for processing")
-tf.flags.DEFINE_integer("max_description", 100, "Maximum words that are considered for the description")
+tf.flags.DEFINE_integer("max_description", 10, "Maximum words that are considered for the description")
 tf.flags.DEFINE_integer("max_number_cols", 15, "Maximum number columns that are considered for processing")
 tf.flags.DEFINE_integer("max_word_cols", 25, "Maximum number columns that are considered for processing")
 tf.flags.DEFINE_integer("question_length", 62, "Maximum length of the question")
@@ -69,7 +69,7 @@ tf.flags.DEFINE_float("certainty_threshold", 70.0, "During demo, any answer belo
 tf.flags.DEFINE_float("clip_gradients", 1.0, "")
 tf.flags.DEFINE_float("eps", 1e-6, "")
 tf.flags.DEFINE_float("param_init", 0.1, "")
-tf.flags.DEFINE_float("learning_rate", 0.001, "")
+tf.flags.DEFINE_float("learning_rate", 0.0001, "")
 tf.flags.DEFINE_float("l2_regularizer", 0.0001, "")
 tf.flags.DEFINE_float("print_cost", 50.0, "Weighting factor in the objective function")
 tf.flags.DEFINE_float("dropout", 0.8, "Dropout keep probability")
@@ -132,7 +132,7 @@ def main(args):
     data_utils.construct_vocab(dev_data, utility)
     data_utils.construct_vocab(test_data, utility, True)
     data_utils.add_special_words(utility)
-    #data_utils.perform_word_cutoff(utility)
+    data_utils.perform_word_cutoff(utility)
 
 
     train_data = masking.complete_wiki_processing(train_data, utility, 'train')
@@ -145,7 +145,7 @@ def main(args):
     print("     Number of test examples " + str(len(test_data)))
 
     #construct TF graph and train or evaluate
-    master(train_data, test_data, utility, dat)
+    master(train_data, dev_data, utility, dat)
 
 
 def master(train_data, dev_data, utility, dat):
